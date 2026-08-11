@@ -684,3 +684,148 @@ nav a.active,
     transition: none;
   }
 }
+
+/* Hero centrado y responsive: corrección definitiva de composición. */
+.hero {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  align-content: center;
+  padding-inline: clamp(24px, 6vw, 96px);
+}
+
+.hero-copy {
+  grid-column: 1 / -1;
+  width: min(100%, 1040px);
+  margin-inline: auto;
+  text-align: center;
+}
+
+.hero .eyebrow,
+.hero h1,
+.hero-lead {
+  margin-inline: auto;
+}
+
+.hero h1 {
+  max-width: 980px;
+  font-size: clamp(52px, 7vw, 108px);
+  text-wrap: balance;
+}
+
+.hero h1 em {
+  padding-left: 0;
+}
+
+.hero-lead {
+  max-width: 720px;
+}
+
+.hero-actions,
+.trust-row {
+  justify-content: center;
+}
+
+.hero-visual {
+  display: none;
+}
+
+@media (max-width: 1050px) {
+  .site-header {
+    padding-inline: clamp(16px, 3vw, 30px);
+  }
+
+  .hero {
+    min-height: 720px;
+    padding: 132px clamp(22px, 5vw, 52px) 72px;
+  }
+
+  .hero-copy {
+    width: min(100%, 820px);
+  }
+
+  .hero h1 {
+    font-size: clamp(50px, 9vw, 82px);
+  }
+}
+
+@media (max-width: 720px) {
+  .site-header {
+    padding-inline: 14px;
+  }
+
+  .brand img {
+    width: clamp(104px, 31vw, 135px);
+  }
+
+  .header-actions {
+    gap: 6px;
+    margin-right: 4px;
+  }
+
+  .hero {
+    min-height: calc(100svh - 70px);
+    padding: 108px 18px 52px;
+    background-position: center, center, 58% top;
+  }
+
+  .hero-copy {
+    width: 100%;
+  }
+
+  .hero .eyebrow {
+    margin-bottom: 18px;
+    font-size: 9px;
+    line-height: 1.5;
+    letter-spacing: .16em;
+  }
+
+  .hero h1 {
+    max-width: 13ch;
+    font-size: clamp(42px, 13vw, 62px);
+    line-height: .94;
+  }
+
+  .hero h1 em {
+    padding-top: 8px;
+  }
+
+  .hero-lead {
+    max-width: 34rem;
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  .hero-actions {
+    width: min(100%, 390px);
+    margin: 28px auto 24px;
+  }
+
+  .hero-actions .button {
+    width: 100%;
+  }
+
+  .trust-row {
+    max-width: 390px;
+    margin-inline: auto;
+    gap: 10px 16px;
+  }
+}
+
+@media (max-width: 390px) {
+  .account-link {
+    font-size: 8px;
+  }
+
+  .hero {
+    padding-inline: 14px;
+  }
+
+  .hero h1 {
+    font-size: clamp(38px, 12.5vw, 50px);
+  }
+
+  .trust-row {
+    display: grid;
+    gap: 8px;
+  }
+}
