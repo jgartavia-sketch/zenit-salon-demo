@@ -296,13 +296,6 @@ export default function Home() {
         </div>
       </section>}
 
-      {isHome && <section className="metrics" aria-label="Ventajas del salón">
-          <div><strong>Zénit</strong><span>el punto máximo</span></div>
-        <div><strong>Atención</strong><span>clara y profesional</span></div>
-        <div><strong>Técnicos</strong><span>especializados</span></div>
-        <div><strong>Calidad</strong><span>garantizada</span></div>
-      </section>}
-
       {isHome && <section className="section home-directory">
         <div className="section-heading">
           <div><p className="eyebrow"><span /> Todo Zénit</p><h2>Elegí tu próxima parada.</h2></div>
