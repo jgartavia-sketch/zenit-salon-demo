@@ -1,20 +1,673 @@
-import Navbar from "@/src/components/Navbar";
-import Hero from "@/src/components/Hero";
-import Services from "@/src/components/Services";
-import Loyalty from "@/src/components/Loyalty";
-import Store from "@/src/components/Store";
-import Booking from "@/src/components/Booking";
+"use client";
 
+// Versión corregida: logo oficial en Tienda y hero optimizado para móvil.
+
+import { useEffect, useMemo, useState } from "react";
+import type { FormEvent } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/$/, "");
+const TOKEN_KEY = "zenit_token";
+
+function authHeaders(): Record<string, string> {
+  const token = typeof window === "undefined" ? "" : localStorage.getItem(TOKEN_KEY);
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+const services = [
+  { icon: "✦", title: "Corte y estilismo", text: "Diseño personalizado para realzar tu imagen.", specialties: ["Corte femenino", "Corte masculino", "Peinado y acabado"] },
+  { icon: "◈", title: "Coloración profesional", text: "Color, dimensión y brillo con diagnóstico previo.", specialties: ["Color completo", "Mechas y balayage", "Corrección de color"] },
+  { icon: "◇", title: "Barbería premium", text: "Precisión, estilo y cuidado en cada detalle.", specialties: ["Corte", "Barba", "Perfilado"] },
+  { icon: "≈", title: "Tratamientos capilares", text: "Recuperación y nutrición según las necesidades de tu cabello.", specialties: ["Hidratación", "Reparación", "Control de frizz"] },
+  { icon: "○", title: "Uñas y estética", text: "Detalles impecables para manos, pies y belleza integral.", specialties: ["Manicure", "Pedicure", "Diseños personalizados"] },
+  { icon: "❋", title: "Spa y bienestar", text: "Una pausa para renovar tu imagen y tu energía.", specialties: ["Cuidado facial", "Relajación", "Paquetes especiales"] },
+];
+
+type CustomerProfile = {
+  name: string;
+  email: string;
+  phone: string;
+  customerId: string;
+  purchasePoints: number;
+  referralPoints: number;
+  referrals: number;
+};
+
+type PointMovement = {
+  id: string;
+  kind: string;
+  points: number;
+  amount_colones: number | null;
+  description: string;
+  created_at: string;
+};
+
+const rewards = [
+  { points: 250, title: "Hidratación express", detail: "Tratamiento rápido de brillo y suavidad.", available: true },
+  { points: 500, title: "Corte de cortesía", detail: "Aplican condiciones según disponibilidad.", available: true },
+  { points: 850, title: "Experiencia Zénit", detail: "Servicio premium seleccionado con el salón.", available: false },
+];
 
 export default function Home() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const isHome = pathname === "/";
+  const isRegistration = pathname === "/registro";
+  const isServices = pathname === "/servicios";
+  const isShop = pathname === "/tienda";
+  const isAbout = pathname === "/nosotros" || pathname === "/contacto";
+  const isLogin = pathname === "/login";
+  const isAccount = pathname === "/mi-cuenta";
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [profile, setProfile] = useState<CustomerProfile | null>(null);
+  const [authMessage, setAuthMessage] = useState("");
+  const [authError, setAuthError] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
+  const [sessionLoading, setSessionLoading] = useState(true);
+  const [movements, setMovements] = useState<PointMovement[]>([]);
+  const [referralCode, setReferralCode] = useState("");
+  const [referralExpiry, setReferralExpiry] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [selectedService, setSelectedService] = useState("Corte y estilismo");
+  const [serviceRequestLoading, setServiceRequestLoading] = useState(false);
+  const [serviceRequestError, setServiceRequestError] = useState("");
+
+  useEffect(() => {
+    const loadSession = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/auth/me`, {
+          cache: "no-store",
+          headers: authHeaders(),
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setProfile(data.customer);
+          setMovements(data.movements || []);
+          if (data.referral) {
+            setReferralCode(data.referral.code);
+            setReferralExpiry(data.referral.expiry);
+          }
+        }
+      } finally {
+        setSessionLoading(false);
+      }
+    };
+    loadSession();
+  }, []);
+
+  const requestService = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setServiceRequestLoading(true);
+    setServiceRequestError("");
+
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    const payload = {
+      name: String(data.get("name") || ""),
+      phone: String(data.get("phone") || ""),
+      service: String(data.get("service") || ""),
+      details: String(data.get("details") || ""),
+      preferredDate: String(data.get("preferredDate") || ""),
+      preferredTime: String(data.get("preferredTime") || ""),
+    };
+
+    try {
+      const response = await fetch(`${API_URL}/api/service-requests`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "No pudimos registrar la solicitud.");
+
+      const message = [
+        "Hola, Zénit Salón. Quiero solicitar un servicio:",
+        "",
+        `Solicitud: ${result.request.id}`,
+        `Nombre: ${payload.name}`,
+        `WhatsApp: ${payload.phone}`,
+        `Servicio: ${payload.service}`,
+        `Detalles: ${payload.details}`,
+        `Fecha preferida: ${payload.preferredDate || "Por coordinar"}`,
+        `Hora preferida: ${payload.preferredTime || "Por coordinar"}`,
+        "",
+        "Entiendo que la fecha debe ser confirmada por el taller.",
+      ].join("\n");
+
+      window.open(`https://wa.me/50671246337?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
+      form.reset();
+      setSelectedService("Corte y estilismo");
+    } catch (error) {
+      setServiceRequestError(error instanceof Error ? error.message : "No pudimos registrar la solicitud.");
+    } finally {
+      setServiceRequestLoading(false);
+    }
+  };
+
+  const registerCustomer = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setAuthLoading(true);
+    setAuthError("");
+    const data = new FormData(event.currentTarget);
+    try {
+      const response = await fetch(`${API_URL}/api/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: data.get("name"),
+          email: data.get("email"),
+          phone: data.get("phone"),
+          password: data.get("password"),
+          referral: data.get("referral"),
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "No pudimos crear la cuenta.");
+      localStorage.setItem(TOKEN_KEY, result.token);
+      setProfile(result.customer);
+      setAuthMessage("Tu cuenta está activa. El correo de bienvenida está en proceso.");
+      router.replace("/mi-cuenta");
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : "No pudimos crear la cuenta.");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const generateReferralCode = async () => {
+    setAuthError("");
+    const response = await fetch(`${API_URL}/api/referrals`, {
+      method: "POST",
+      headers: authHeaders(),
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      setAuthError(result.error || "No pudimos generar el código.");
+      return;
+    }
+    setReferralCode(result.code);
+    setReferralExpiry(result.expiry);
+    setCopied(false);
+  };
+
+  const copyReferralCode = async () => {
+    if (!referralCode) return;
+    await navigator.clipboard?.writeText(referralCode);
+    setCopied(true);
+  };
+
+  const loginCustomer = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setAuthLoading(true);
+    setAuthError("");
+    setAuthMessage("");
+    const data = new FormData(event.currentTarget);
+    try {
+      const response = await fetch(`${API_URL}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: data.get("email"), password: data.get("password") }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "No pudimos iniciar sesión.");
+      localStorage.setItem(TOKEN_KEY, result.token);
+      setProfile(result.customer);
+      setAuthMessage("Sesión iniciada correctamente.");
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : "No pudimos iniciar sesión.");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const logoutCustomer = async () => {
+    localStorage.removeItem(TOKEN_KEY);
+    setProfile(null);
+    setMovements([]);
+    setReferralCode("");
+    setReferralExpiry("");
+    setAuthMessage("");
+  };
+
+  const totalPoints = useMemo(
+    () => (profile?.purchasePoints || 0) + (profile?.referralPoints || 0),
+    [profile],
+  );
+
   return (
-    <main className="min-h-screen bg-[#070707] text-white">
-      <Navbar />
-      <Hero />
-      <Services />
-      <Loyalty />
-      <Store />
-      <Booking />
+    <main>
+      <header className="site-header">
+        <Link className="brand" href="/" aria-label="Zénit Salón, inicio">
+          <img src="/logo-zenit.png" alt="Zénit Salón" />
+        </Link>
+
+        <button
+          className="menu-toggle"
+          onClick={() => setMenuOpen(!menuOpen)}
+          aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
+          aria-expanded={menuOpen}
+          aria-controls="main-navigation"
+        >
+          {menuOpen ? "×" : "☰"}
+        </button>
+        <nav id="main-navigation" className={menuOpen ? "nav-open" : ""} aria-label="Navegación principal">
+          <Link className={isHome ? "active" : ""} href="/" onClick={() => setMenuOpen(false)}>Inicio</Link>
+          <Link className={isRegistration ? "active" : ""} href="/registro" onClick={() => setMenuOpen(false)}>Registro</Link>
+          <Link className={isShop ? "active" : ""} href="/tienda" onClick={() => setMenuOpen(false)}>Tienda</Link>
+          <Link className={isServices ? "active" : ""} href="/servicios" onClick={() => setMenuOpen(false)}>Servicios</Link>
+          <Link className={isAbout ? "active" : ""} href="/nosotros" onClick={() => setMenuOpen(false)}>Nosotros</Link>
+        </nav>
+
+        <div className="header-actions">
+          <Link className="button button-small" href="/servicios#solicitar-servicio">Reservar</Link>
+          <Link className="account-link" href={profile ? "/mi-cuenta" : "/login"}>{profile ? "Mi cuenta" : "Ingresar"}</Link>
+        </div>
+      </header>
+
+      {isHome && <section className="hero" id="inicio">
+        <div className="hero-grid" aria-hidden="true" />
+        <div className="hero-glow" aria-hidden="true" />
+        <div className="hero-copy">
+          <p className="eyebrow"><span /> Estilo · belleza · bienestar</p>
+          <h1>Tu belleza alcanza <em>su punto máximo.</em></h1>
+          <p className="hero-lead">
+            Una experiencia personalizada para renovar tu imagen con técnica, cuidado y elegancia.
+          </p>
+          <div className="hero-actions">
+            <Link className="button" href="/servicios#solicitar-servicio">Reservar cita <b>→</b></Link>
+            <Link className="button button-ghost" href="/tienda">Explorar tienda</Link>
+          </div>
+          <div className="trust-row">
+            <span><b>✓</b> Atención personalizada</span>
+            <span><b>✓</b> Profesionales especializados</span>
+            <span><b>✓</b> Atención profesional</span>
+          </div>
+        </div>
+
+        <div className="hero-visual">
+          <div className="logo-stage">
+            <div className="orbit orbit-one" />
+            <div className="orbit orbit-two" />
+            <img src="/logo-zenit.png" alt="Logo de Zénit Salón" />
+          </div>
+        </div>
+      </section>}
+
+      {isHome && <section className="metrics" aria-label="Ventajas del salón">
+          <div><strong>Zénit</strong><span>el punto máximo</span></div>
+        <div><strong>Atención</strong><span>clara y profesional</span></div>
+        <div><strong>Técnicos</strong><span>especializados</span></div>
+        <div><strong>Calidad</strong><span>garantizada</span></div>
+      </section>}
+
+      {isHome && <section className="section home-directory">
+        <div className="section-heading">
+          <div><p className="eyebrow"><span /> Todo Zénit</p><h2>Elegí tu próxima parada.</h2></div>
+          <p>Cada área tiene ahora su propio espacio para que encontrés lo que necesitás sin recorrer una página interminable.</p>
+        </div>
+        <div className="directory-grid">
+          <Link href="/registro"><span>01</span><h3>Club Zénit</h3><p>Creá tu tarjeta, consultá puntos y compartí códigos de referido.</p><b>Ir a Registro →</b></Link>
+          <Link href="/tienda"><span>02</span><h3>Tienda</h3><p>Explorá productos profesionales seleccionados para tu cuidado.</p><b>Entrar a la tienda →</b></Link>
+          <Link href="/servicios"><span>03</span><h3>Servicios</h3><p>Conocé las experiencias disponibles y reservá por WhatsApp.</p><b>Ver servicios →</b></Link>
+          <Link href="/nosotros"><span>04</span><h3>Nosotros</h3><p>Conocé nuestra experiencia, escribinos o encontrá la ruta al salón.</p><b>Conocernos →</b></Link>
+        </div>
+      </section>}
+
+      {isRegistration && <section className="section loyalty page-section" id="registro">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow"><span /> Club Zénit</p>
+            <h2>Cada visita mueve tu recompensa.</h2>
+          </div>
+          <p>Registrate gratis, acumulá puntos por tus compras y servicios, e invitá personas para construir una red que también te premie.</p>
+        </div>
+
+        <div className="loyalty-layout">
+          <div className="registration-panel">
+            {!profile ? (
+              <>
+                <div className="panel-title">
+                  <span>01</span>
+                  <div><small>Registro gratuito</small><h3>Creá tu cuenta</h3></div>
+                </div>
+                <form className="registration-form" onSubmit={registerCustomer}>
+                  <label>Nombre completo<input name="name" required placeholder="Ej. Carlos Sánchez" /></label>
+                  <label>Correo electrónico<input name="email" type="email" required placeholder="correo@ejemplo.com" /></label>
+                  <label>WhatsApp<input name="phone" type="tel" required placeholder="+506 8888-8888" /></label>
+                  <label>
+                    Contraseña
+                    <div className="password-field">
+                      <input
+                        name="password"
+                        type={showRegisterPassword ? "text" : "password"}
+                        required
+                        minLength={8}
+                        placeholder="Mínimo 8 caracteres"
+                      />
+                      <button
+                        type="button"
+                        className="password-toggle"
+                        onClick={() => setShowRegisterPassword((visible) => !visible)}
+                        aria-label={showRegisterPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                        aria-pressed={showRegisterPassword}
+                      >
+                        {showRegisterPassword ? (
+                          <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M3 3l18 18M10.6 10.7a2 2 0 002.7 2.7M9.9 4.2A10.8 10.8 0 0112 4c5.5 0 9 5.1 9 5.1a15 15 0 01-3.1 3.6M6.2 6.2C4.2 7.5 3 9.1 3 9.1S6.5 15 12 15c1 0 2-.2 2.9-.5" />
+                          </svg>
+                        ) : (
+                          <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" />
+                            <circle cx="12" cy="12" r="2.5" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                  </label>
+                  <label>Código de referido <small>Opcional</small><input name="referral" placeholder="Ej. ZENIT-A7K29Q" /></label>
+                  <label className="terms-check"><input type="checkbox" required /><span>Acepto los términos del programa de fidelización.</span></label>
+                  {authError && <p className="inline-error">{authError}</p>}
+                  <button className="button" type="submit" disabled={authLoading}>{authLoading ? "Creando cuenta..." : "Crear mi tarjeta →"}</button>
+                </form>
+              </>
+            ) : (
+              <div className="registration-success">
+                <span>✓</span>
+                <p className="eyebrow">Cuenta activa</p>
+                <h3>¡Bienvenido al Club Zénit!</h3>
+                <p>{authMessage || "Tu tarjeta digital ya está vinculada de forma segura a tu correo y WhatsApp."}</p>
+                <button className="button" type="button" onClick={logoutCustomer}>
+                  Cerrar sesión
+                </button>
+              </div>
+            )}
+          </div>
+
+          <article className="loyalty-card" aria-label="Vista previa de tarjeta digital">
+            <div className="card-top">
+              <img src="/logo-zenit.png" alt="" />
+              <div><small>Cliente frecuente</small><strong>Club Zénit</strong></div>
+              <span>ACTIVA</span>
+            </div>
+            <div className="customer-data">
+              <small>Cliente</small>
+              <h3>{profile ? profile.name : "Tu nombre aparecerá aquí"}</h3>
+              <p>ID {profile?.customerId || "JAM-2026-0000"}</p>
+            </div>
+            <div className="points-total"><small>Puntos disponibles</small><strong>{totalPoints}</strong><span>pts</span></div>
+            <div className="points-split">
+              <div><small>Por compras y servicios</small><strong>{profile?.purchasePoints || 0} pts</strong></div>
+              <div><small>Por referidos</small><strong>{profile?.referralPoints || 0} pts</strong></div>
+            </div>
+            <div className="referral-generator">
+              <div>
+                <small>Tu código de referido</small>
+                <strong>{referralCode || "Generá uno cuando lo necesités"}</strong>
+                {referralCode && <span>Vence {new Date(referralExpiry).toLocaleDateString("es-CR")} · Un solo uso</span>}
+              </div>
+              {!referralCode ? (
+                <button onClick={generateReferralCode} disabled={!profile}>{profile ? "Generar código" : "Registrate primero"}</button>
+              ) : (
+                <div className="referral-actions">
+                  <button onClick={copyReferralCode}>{copied ? "Copiado ✓" : "Copiar"}</button>
+                  <a href={`https://wa.me/?text=${encodeURIComponent(`Registrate en el Club Zénit con mi código ${referralCode}. Vence en 3 días.`)}`} target="_blank" rel="noreferrer">WhatsApp</a>
+                  <button onClick={generateReferralCode}>Nuevo</button>
+                </div>
+              )}
+            </div>
+            <p className="demo-note">Cada ₡100 pagados y confirmados equivalen a 1 punto.</p>
+          </article>
+        </div>
+
+        <div className="benefit-strip">
+          <div><span>01</span><strong>Comprá o recibí un servicio</strong><p>Sumás puntos personales por cada transacción confirmada.</p></div>
+          <div><span>02</span><strong>Invitá con un código</strong><p>Cada código es único, vence en tres días y funciona una sola vez.</p></div>
+          <div><span>03</span><strong>Tu red también suma</strong><p>Ganás puntos cuando tus referidos compran o visitan el taller.</p></div>
+        </div>
+      </section>}
+
+      {isLogin && <section className="section auth-page page-section">
+        <div className="auth-copy">
+          <p className="eyebrow"><span /> Acceso Club Zénit</p>
+          <h2>Tu estilo, tus puntos y tu historial en un solo lugar.</h2>
+          <p>Ingresá de forma segura para consultar tu tarjeta digital, tus puntos y la actividad registrada por el taller.</p>
+          <div className="auth-features">
+            <span>✓ Tarjeta digital</span>
+            <span>✓ Recompensas</span>
+            <span>✓ Historial de servicios</span>
+          </div>
+        </div>
+        <div className="auth-panel">
+          <div className="panel-title"><span>→</span><div><small>Cliente registrado</small><h3>Ingresar</h3></div></div>
+          <form className="registration-form single-column" onSubmit={loginCustomer}>
+            <label>Correo electrónico<input name="email" type="email" required placeholder="correo@ejemplo.com" /></label>
+            <label>
+              Contraseña
+              <div className="password-field">
+                <input
+                  name="password"
+                  type={showLoginPassword ? "text" : "password"}
+                  required
+                  minLength={6}
+                  placeholder="••••••••"
+                />
+                <button
+                              type="button"
+                              className="password-toggle"
+                              onClick={() => setShowLoginPassword((visible) => !visible)}
+                              aria-label={showLoginPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                              aria-pressed={showLoginPassword}
+                            >
+                              {showLoginPassword ? (
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                  <path d="M3 3l18 18M10.6 10.7a2 2 0 002.7 2.7M9.9 4.2A10.8 10.8 0 0112 4c5.5 0 9 5.1 9 5.1a15 15 0 01-3.1 3.6M6.2 6.2C4.2 7.5 3 9.1 3 9.1S6.5 15 12 15c1 0 2-.2 2.9-.5" />
+                                </svg>
+                              ) : (
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                  <path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" />
+                                  <circle cx="12" cy="12" r="2.5" />
+                                </svg>
+                              )}
+                            </button>
+              </div>
+            </label>
+            {authError && <p className="inline-error">{authError}</p>}
+            <button className="button" type="submit" disabled={authLoading}>{authLoading ? "Ingresando..." : "Ingresar a mi cuenta →"}</button>
+          </form>
+          {authMessage && <div className="inline-success">{authMessage}<Link href="/mi-cuenta">Abrir mi cuenta →</Link></div>}
+          <p className="auth-switch">¿Todavía no sos parte? <Link href="/registro">Crear cuenta gratis</Link></p>
+        </div>
+      </section>}
+
+      {isAccount && <section className="section account-page page-section">
+        {!profile ? (
+          <div className="account-empty">
+            <p className="eyebrow"><span /> Club Zénit</p>
+            <h2>{sessionLoading ? "Cargando tu cuenta..." : "Primero ingresá a tu cuenta."}</h2>
+            <p>{sessionLoading ? "Estamos recuperando tu tarjeta digital." : "Así podremos mostrar tu tarjeta, tus puntos y tu historial."}</p>
+            <div><Link className="button" href="/login">Ingresar →</Link><Link className="button button-ghost" href="/registro">Registrarme</Link></div>
+          </div>
+        ) : (
+          <>
+            <div className="account-heading">
+              <div><p className="eyebrow"><span /> Mi cuenta</p><h2>Hola, {profile.name.split(" ")[0]}.</h2><p>Todo lo importante de tu relación con Zénit, sin papeles ni vueltas.</p></div>
+              <button className="text-button" onClick={logoutCustomer}>Cerrar sesión</button>
+            </div>
+            <div className="account-grid">
+              <article className="loyalty-card account-card">
+                <div className="card-top"><img src="/logo-zenit.png" alt="" /><div><small>Cliente frecuente</small><strong>Club Zénit</strong></div><span>ACTIVA</span></div>
+                <div className="customer-data"><small>Cliente</small><h3>{profile.name}</h3><p>ID {profile.customerId}</p></div>
+                <div className="points-total"><small>Saldo total</small><strong>{totalPoints}</strong><span>pts</span></div>
+                <div className="points-split"><div><small>Compras y servicios</small><strong>{profile.purchasePoints} pts</strong></div><div><small>Red de referidos</small><strong>{profile.referralPoints} pts</strong></div></div>
+              </article>
+              <div className="account-summary">
+                <article><small>Referidos activos</small><strong>{profile.referrals}</strong><p>Personas registradas con tus códigos.</p></article>
+                <article><small>Próxima recompensa</small><strong>{Math.max(0, 850 - totalPoints)} pts</strong><p>Para desbloquear Experiencia Zénit.</p></article>
+                <article><small>Última visita</small><strong>18 JUL</strong><p>Servicio premium.</p></article>
+              </div>
+            </div>
+
+            <div className="account-section">
+              <div className="subheading"><div><p className="eyebrow"><span /> Beneficios</p><h3>Recompensas disponibles</h3></div><p>Los puntos se descuentan únicamente cuando el beneficio es confirmado por el taller.</p></div>
+              <div className="reward-grid">{rewards.map((reward) => {
+                const unlocked = totalPoints >= reward.points;
+                return <article className={unlocked ? "reward-card unlocked" : "reward-card"} key={reward.title}><span>{reward.points} pts</span><h4>{reward.title}</h4><p>{reward.detail}</p><button disabled={!unlocked}>{unlocked ? "Canjear beneficio" : `Te faltan ${reward.points - totalPoints} pts`}</button></article>;
+              })}</div>
+            </div>
+
+            <div className="account-columns">
+              <div className="account-section referral-center">
+                <p className="eyebrow"><span /> Crecé tu red</p><h3>Invitar a alguien</h3><p>El código vence en tres días y solo puede utilizarse una vez. Podés generar otro cuando el anterior expire o sea utilizado.</p>
+                <div className="referral-generator">
+                  <div><small>Código activo</small><strong>{referralCode || "Sin código activo"}</strong>{referralCode && <span>Vence {new Date(referralExpiry).toLocaleDateString("es-CR")}</span>}</div>
+                  {!referralCode ? <button onClick={generateReferralCode}>Generar código</button> : <div className="referral-actions"><button onClick={copyReferralCode}>{copied ? "Copiado ✓" : "Copiar"}</button><a href={`https://wa.me/?text=${encodeURIComponent(`Registrate en el Club Zénit con mi código ${referralCode}.`)}`} target="_blank" rel="noreferrer">WhatsApp</a></div>}
+                </div>
+              </div>
+              <div className="account-section">
+                <p className="eyebrow"><span /> Actividad</p><h3>Historial reciente</h3>
+                <div className="history-list">
+                  {movements.length ? movements.map((movement) => (
+                    <div key={movement.id}>
+                      <span>{new Date(movement.created_at).toLocaleDateString("es-CR", { day: "2-digit", month: "short" }).toUpperCase()}</span>
+                      <p><strong>{movement.description}</strong><small>{movement.points >= 0 ? "+" : ""}{movement.points} pts</small></p>
+                    </div>
+                  )) : <p className="empty-history">Tus movimientos aparecerán aquí cuando el taller confirme una compra, servicio o ajuste.</p>}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </section>}
+
+      {isServices && <section className="section services page-section" id="servicios">
+        <div className="process-inside">
+          <div className="section-heading centered">
+            <div><p className="eyebrow"><span /> Cómo funciona</p><h2>Así de fácil elevamos tu estilo.</h2></div>
+          </div>
+          <div className="process-grid">
+            {[
+              ["01", "Elegí", "Seleccioná el servicio que mejor acompaña tu estilo."],
+              ["02", "Solicitá", "La solicitud queda registrada y llega ordenada a WhatsApp."],
+              ["03", "Coordiná", "Zénit confirma disponibilidad y fecha directamente con vos."],
+              ["04", "Sumá puntos", "Con cada compra o servicio confirmado crece tu saldo Zénit."],
+            ].map(([number, title, text]) => (
+              <article key={number}><span>{number}</span><h3>{title}</h3><p>{text}</p></article>
+            ))}
+          </div>
+        </div>
+        <div className="section-heading">
+          <div><p className="eyebrow"><span /> Todo en un solo lugar</p><h2>Belleza, precisión y experiencia.</h2></div>
+          <p>Desde un cambio sutil hasta una transformación completa, cuidamos cada detalle.</p>
+        </div>
+        <div className="service-grid">
+          {services.map((service) => (
+            <article className="service-card" key={service.title}>
+              <span className="service-icon">{service.icon}</span>
+              <h3>{service.title}</h3>
+              <p>{service.text}</p>
+              <ul>{service.specialties.map((specialty) => <li key={specialty}>{specialty}</li>)}</ul>
+              <button type="button" onClick={() => {
+                setSelectedService(service.title);
+                document.getElementById("solicitar-servicio")?.scrollIntoView({ behavior: "smooth" });
+              }}>Solicitar servicio <b>↗</b></button>
+            </article>
+          ))}
+        </div>
+
+        <article className="service-request-panel" id="solicitar-servicio">
+          <div className="service-request-copy">
+            <p className="eyebrow"><span /> Solicitud registrada</p>
+            <h3>Contanos cómo querés verte y sentirte.</h3>
+            <p>Guardaremos la solicitud para darle seguimiento desde el panel y luego abriremos WhatsApp para coordinar los detalles.</p>
+            <div className="parts-benefits">
+              <span>✓ Seguimiento interno</span>
+              <span>✓ Atención por WhatsApp</span>
+              <span>✓ Fecha sujeta a confirmación</span>
+            </div>
+          </div>
+          <form className="service-request-form" onSubmit={requestService}>
+            <label>Nombre completo<input name="name" required placeholder="Ej. Carlos Sánchez" /></label>
+            <div className="form-row">
+              <label>WhatsApp<input name="phone" required inputMode="tel" placeholder="Ej. 7124 6337" /></label>
+              <label>Servicio
+                <select name="service" value={selectedService} onChange={(event) => setSelectedService(event.target.value)} required>
+                  {services.map((service) => <option key={service.title} value={service.title}>{service.title}</option>)}
+                </select>
+              </label>
+            </div>
+            <label>Detalles<textarea name="details" required placeholder="Contanos el resultado que buscás o cualquier detalle importante." /></label>
+            <div className="form-row">
+              <label>Fecha preferida <small>Opcional; no confirma la cita</small><input name="preferredDate" type="date" /></label>
+              <label>Hora preferida <small>Opcional</small><input name="preferredTime" type="time" /></label>
+            </div>
+            {serviceRequestError && <p className="inline-error">{serviceRequestError}</p>}
+            <button className="button" type="submit" disabled={serviceRequestLoading}>{serviceRequestLoading ? "Registrando solicitud..." : <>Enviar y coordinar por WhatsApp <b>→</b></>}</button>
+            <small className="form-note">Zénit confirmará por WhatsApp la fecha y disponibilidad del servicio.</small>
+          </form>
+        </article>
+      </section>}
+
+      {isShop && <section className="section shop page-section" id="tienda">
+        <div className="section-heading">
+          <div><p className="eyebrow"><span /> Tienda Zénit</p><h2>Productos profesionales para prolongar tu experiencia.</h2></div>
+          <p>Estamos preparando una experiencia más clara para que encontrés lo que tu estilo necesita.</p>
+        </div>
+
+        <div className="product-grid">
+          {[
+            ["Shampoo profesional", "Limpieza profunda con acabado suave y brillante."],
+            ["Tratamiento reparador", "Nutrición intensiva para cabello seco o procesado."],
+            ["Aceite capilar premium", "Brillo, control y protección para el uso diario."],
+          ].map(([title, description]) => (
+            <article className="product-card" key={title}>
+              <div className="product-art"><span>✦</span><small>Próximamente</small></div>
+              <div className="product-copy"><h3>{title}</h3><p>{description}</p></div>
+            </article>
+          ))}
+        </div>
+        <a className="button shop-all" href="https://wa.me/50671246337?text=Hola%2C%20quiero%20consultar%20por%20productos%20de%20Z%C3%A9nit%20Sal%C3%B3n" target="_blank" rel="noreferrer">Consultar disponibilidad por WhatsApp →</a>
+      </section>}
+
+      {isAbout && <section className="section about-contact page-section" id="nosotros">
+        <div className="about-contact-intro">
+          <div className="about-copy">
+            <p className="eyebrow"><span /> Zénit Salón</p>
+            <h2>El punto máximo de tu belleza.</h2>
+            <p>Un espacio creado para elevar tu imagen con atención personalizada, técnica profesional y una experiencia donde cada detalle cuenta.</p>
+          </div>
+          <div className="about-stat"><strong>✦</strong><span>Belleza con propósito</span><small>San Carlos, Costa Rica</small></div>
+        </div>
+
+        <div className="contact-hub">
+          <div className="contact-hub-copy">
+            <p className="eyebrow"><span /> Contacto y ubicación</p>
+            <h3>Estamos listos para ayudarte.</h3>
+            <p>Escribinos, conocé nuestro trabajo en Facebook o abrí la ruta al salón desde tu aplicación favorita.</p>
+            <div className="contact-details">
+              <a href="https://wa.me/50671246337" target="_blank" rel="noreferrer"><small>Teléfono y WhatsApp</small><strong>+506 7124-6337</strong></a>
+              <span><small>Ubicación</small><strong>Dulce Nombre, Calle Sancho, San Carlos</strong></span>
+            </div>
+          </div>
+          <div className="about-actions">
+            <a className="button" href="https://wa.me/50671246337" target="_blank" rel="noreferrer">Escribir por WhatsApp →</a>
+            <a className="button button-ghost" href="https://www.google.com/maps/search/?api=1&query=Dulce%20Nombre%20Calle%20Sancho%20San%20Carlos%20Costa%20Rica" target="_blank" rel="noreferrer">Llegar con Google Maps →</a>
+            <a className="button button-ghost" href="https://www.waze.com/ul?q=Dulce%20Nombre%20Calle%20Sancho%20San%20Carlos%20Costa%20Rica&navigate=yes" target="_blank" rel="noreferrer">Llegar con Waze →</a>
+          </div>
+        </div>
+      </section>}
+
+      <footer>
+        <div className="brand footer-brand"><img src="/logo-zenit.png" alt="" /><span><strong>Zénit</strong>Salón</span></div>
+        <div className="footer-contact" aria-label="Información de contacto">
+          <p><strong>Teléfono y WhatsApp</strong>+506 7124-6337</p>
+          <p><strong>Ubicación</strong>Dulce Nombre, Calle Sancho, San Carlos</p>
+        </div>
+        <p className="footer-copyright">© 2026 Zénit Salón</p>
+      </footer>
+
     </main>
   );
 }
