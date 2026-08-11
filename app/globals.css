@@ -1118,3 +1118,132 @@ h4,
     transform: none;
   }
 }
+/* ==========================================================
+   ZÉNIT — VIDRIO AZUL EN REGISTRO, TIENDA Y SERVICIOS
+   Pegar este bloque al FINAL de app/globals.css
+   ========================================================== */
+
+/* Cards que comparten el mismo lenguaje visual del inicio. */
+.benefit-strip > div,
+.service-card,
+.product-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  transition:
+    transform 0.45s cubic-bezier(0.2, 0.75, 0.25, 1),
+    border-color 0.45s ease,
+    box-shadow 0.45s ease,
+    background 0.45s ease;
+}
+
+/* Reflejo diagonal: cruza la superficie como luz sobre vidrio. */
+.benefit-strip > div::after,
+.service-card::after,
+.product-card::after {
+  content: "";
+  position: absolute;
+  z-index: 4;
+  top: -90%;
+  left: -78%;
+  width: 42%;
+  height: 280%;
+  pointer-events: none;
+  opacity: 0;
+  transform: rotate(24deg) translate3d(-170%, 0, 0);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(123, 176, 245, 0.02) 18%,
+    rgba(188, 220, 255, 0.17) 42%,
+    rgba(255, 255, 255, 0.62) 50%,
+    rgba(124, 182, 255, 0.18) 58%,
+    transparent 100%
+  );
+  filter: blur(1px);
+  mix-blend-mode: screen;
+}
+
+.benefit-strip > div:hover,
+.benefit-strip > div:focus-within,
+.service-card:hover,
+.service-card:focus-within,
+.product-card:hover,
+.product-card:focus-within {
+  transform: translateY(-9px) scale(1.012);
+  border-color: rgba(174, 205, 255, 0.64);
+  background-color: rgba(12, 24, 39, 0.96);
+  box-shadow:
+    0 25px 54px rgba(0, 0, 0, 0.48),
+    0 0 32px rgba(73, 137, 224, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+.benefit-strip > div:hover::after,
+.benefit-strip > div:focus-within::after,
+.service-card:hover::after,
+.service-card:focus-within::after,
+.product-card:hover::after,
+.product-card:focus-within::after {
+  animation: zenit-glass-sweep-sections 1.05s cubic-bezier(0.2, 0.72, 0.25, 1) forwards;
+}
+
+@keyframes zenit-glass-sweep-sections {
+  0% {
+    opacity: 0;
+    transform: rotate(24deg) translate3d(-170%, 0, 0);
+  }
+  18% { opacity: 1; }
+  82% { opacity: 0.9; }
+  100% {
+    opacity: 0;
+    transform: rotate(24deg) translate3d(650%, 0, 0);
+  }
+}
+
+/* En táctil: respuesta breve al toque, sin disparar un barrido permanente. */
+@media (hover: none) {
+  .benefit-strip > div:active,
+  .service-card:active,
+  .product-card:active {
+    transform: scale(0.985);
+    border-color: rgba(174, 205, 255, 0.5);
+    box-shadow: 0 0 24px rgba(73, 137, 224, 0.12);
+  }
+}
+
+/* En móvil reduce el desplazamiento para conservar estabilidad visual. */
+@media (max-width: 720px) {
+  .benefit-strip > div:hover,
+  .benefit-strip > div:focus-within,
+  .service-card:hover,
+  .service-card:focus-within,
+  .product-card:hover,
+  .product-card:focus-within {
+    transform: translateY(-4px);
+  }
+}
+
+/* Accesibilidad: respeta la preferencia de reducir movimiento. */
+@media (prefers-reduced-motion: reduce) {
+  .benefit-strip > div,
+  .service-card,
+  .product-card {
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .benefit-strip > div::after,
+  .service-card::after,
+  .product-card::after {
+    display: none;
+  }
+
+  .benefit-strip > div:hover,
+  .benefit-strip > div:focus-within,
+  .service-card:hover,
+  .service-card:focus-within,
+  .product-card:hover,
+  .product-card:focus-within {
+    transform: none;
+  }
+}
