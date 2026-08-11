@@ -1006,3 +1006,115 @@ h4,
     border-radius: 14px;
   }
 }
+/* ==========================================================
+   ZÉNIT — EFECTO DE VIDRIO EN CARDS DEL INICIO
+   Pegar al FINAL de app/globals.css
+   ========================================================== */
+
+.directory-grid > a {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  box-shadow:
+    0 18px 38px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  transition:
+    transform 0.45s cubic-bezier(0.2, 0.75, 0.25, 1),
+    border-color 0.45s ease,
+    box-shadow 0.45s ease,
+    background 0.45s ease;
+}
+
+/* Reflejo diagonal que permanece fuera de la card hasta el hover. */
+.directory-grid > a::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  top: -85%;
+  left: -75%;
+  width: 42%;
+  height: 270%;
+  pointer-events: none;
+  opacity: 0;
+  transform: rotate(24deg) translate3d(-170%, 0, 0);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(151, 194, 255, 0.02) 20%,
+    rgba(219, 236, 255, 0.16) 43%,
+    rgba(255, 255, 255, 0.58) 50%,
+    rgba(151, 194, 255, 0.15) 57%,
+    transparent 100%
+  );
+  filter: blur(1px);
+}
+
+/* Mantiene texto y enlaces por encima del reflejo. */
+.directory-grid > a > * {
+  position: relative;
+  z-index: 1;
+}
+
+.directory-grid > a:hover,
+.directory-grid > a:focus-visible {
+  transform: translateY(-9px) scale(1.012);
+  border-color: rgba(174, 205, 255, 0.62);
+  background: linear-gradient(
+    145deg,
+    rgba(111, 157, 220, 0.14),
+    rgba(255, 255, 255, 0.025) 55%,
+    rgba(72, 105, 158, 0.08)
+  );
+  box-shadow:
+    0 25px 52px rgba(0, 0, 0, 0.48),
+    0 0 30px rgba(79, 137, 219, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.13);
+}
+
+.directory-grid > a:hover::before,
+.directory-grid > a:focus-visible::before {
+  opacity: 1;
+  animation: zenit-glass-sweep 1.05s cubic-bezier(0.2, 0.72, 0.25, 1) forwards;
+}
+
+.directory-grid > a:focus-visible {
+  outline: 2px solid rgba(190, 218, 255, 0.82);
+  outline-offset: 4px;
+}
+
+@keyframes zenit-glass-sweep {
+  0% {
+    opacity: 0;
+    transform: rotate(24deg) translate3d(-170%, 0, 0);
+  }
+  18% {
+    opacity: 1;
+  }
+  82% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(24deg) translate3d(620%, 0, 0);
+  }
+}
+
+/* En pantallas táctiles conserva profundidad sin animaciones accidentales. */
+@media (hover: none) {
+  .directory-grid > a:active {
+    transform: scale(0.985);
+    border-color: rgba(174, 205, 255, 0.5);
+  }
+}
+
+/* Accesibilidad: elimina desplazamiento cuando el usuario reduce movimiento. */
+@media (prefers-reduced-motion: reduce) {
+  .directory-grid > a::before {
+    display: none;
+  }
+
+  .directory-grid > a:hover,
+  .directory-grid > a:focus-visible {
+    transform: none;
+  }
+}
