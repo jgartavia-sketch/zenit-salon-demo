@@ -197,7 +197,7 @@ export default function StaffPage() {
           </Link>
           <p className={styles.kicker}>Acceso privado</p>
           <h1>Staff Zénit</h1>
-          <p className={styles.intro}>Ingresá con la cuenta individual asignada por el taller.</p>
+          <p className={styles.intro}>Ingresá con la cuenta individual asignada por Zénit Salón.</p>
           <form onSubmit={login} className={styles.form}>
             <label>Correo del empleado<input name="email" type="email" autoComplete="username" required /></label>
             <label>Contraseña<input name="password" type="password" autoComplete="current-password" required /></label>

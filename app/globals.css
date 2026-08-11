@@ -21,8 +21,8 @@
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-body { margin: 0; background: var(--ink); color: var(--white); font-family: var(--font-body); }
-h1, h2, h3, .brand, .card-top strong { font-family: var(--font-display); letter-spacing: .015em; }
+body { margin: 0; background: var(--ink); color: var(--white); font-family: Arial, Helvetica, sans-serif; }
+h1, h2, h3, .brand, .card-top strong { font-family: Georgia, "Times New Roman", serif; letter-spacing: .015em; }
 button, input, textarea, select { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }
 button { cursor: pointer; }
@@ -86,7 +86,7 @@ nav a:hover { color: white; }
 .eyebrow { margin: 0 0 22px; color: #b8bdc2; font-size: 10px; letter-spacing: .23em; text-transform: uppercase; font-weight: 800; }
 .eyebrow span { display: inline-block; width: 28px; height: 2px; background: var(--silver); vertical-align: middle; margin: 0 9px 3px 0; }
 .hero h1 { max-width: 760px; margin: 0; font-size: clamp(48px, 6.2vw, 92px); line-height: .92; letter-spacing: -.055em; text-transform: uppercase; font-style: italic; font-weight: 950; }
-.hero h1 em { display: block; color: #fff; font-family: var(--font-display); text-transform: none; font-weight: 500; letter-spacing: -.04em; padding: 10px 0 4px 9%; background: var(--metal); background-size: 180% 100%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 3px 8px rgba(255,255,255,.12)); }
+.hero h1 em { display: block; color: #fff; font-family: Georgia, serif; text-transform: none; font-weight: 500; letter-spacing: -.04em; padding: 10px 0 4px 9%; background: var(--metal); background-size: 180% 100%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 3px 8px rgba(255,255,255,.12)); }
 .hero-lead { max-width: 590px; color: var(--muted); font-size: 17px; line-height: 1.75; }
 .hero-actions { display: flex; gap: 12px; margin: 34px 0; }
 .trust-row { display: flex; flex-wrap: wrap; gap: 24px; color: #aeb4ba; font-size: 11px; font-weight: 700; }
@@ -830,420 +830,79 @@ nav a.active,
   }
 }
 
-/* Sistema tipográfico Zénit — editorial, elegante y completamente responsive. */
-:root {
-  --font-display: var(--font-zenit-display), "Times New Roman", serif;
-  --font-body: var(--font-zenit-body), Arial, sans-serif;
-}
-
-html,
-body {
-  font-family: var(--font-body);
-  font-optical-sizing: auto;
-}
-
-body,
-button,
-input,
-textarea,
-select,
-nav a,
-.account-link {
-  font-family: var(--font-body);
-}
-
-h1,
-h2,
-h3,
-h4,
-.brand,
-.card-top strong,
-.panel-title h3,
-.customer-data h3,
-.account-summary strong,
-.about-stat strong,
-.drawer-head h2,
-.empty-cart h3 {
-  font-family: var(--font-display);
-  font-weight: 600;
-  letter-spacing: -0.018em;
-}
-
-.hero h1 {
-  font-family: var(--font-display);
-  font-weight: 500;
-  font-style: normal;
-  letter-spacing: -0.045em;
-  text-transform: none;
-  line-height: .88;
-}
-
-.hero h1 em {
-  font-family: var(--font-display);
-  font-weight: 500;
-  font-style: italic;
-  letter-spacing: -0.035em;
-}
-
-.section-heading h2,
-.cta-section h2,
-.modal h2,
-.auth-copy h2,
-.account-heading h2,
-.account-empty h2,
-.about-contact h2,
-.contact-hub h3,
-.service-request-copy h3,
-.catalog-coming-soon h3,
-.used-parts-panel h3,
-.account-section h3,
-.subheading h3 {
-  font-family: var(--font-display);
-  font-weight: 500;
-  font-style: normal;
-  text-transform: none;
-  letter-spacing: -0.025em;
-  line-height: .95;
-}
-
-.service-card h3,
-.product-copy h3,
-.panel-title h3,
-.registration-success h3,
-.card-top strong,
-.customer-data h3,
-.benefit-strip strong,
-.reward-card h4,
-.process-grid h3,
-.about-stat span,
-.history-list strong {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-style: normal;
-  text-transform: none;
-  letter-spacing: -.01em;
-}
-
-.button,
-.service-card button,
-.product-copy button,
-.reward-card button,
-.text-button,
-.referral-generator button,
-.referral-generator a {
-  font-family: var(--font-body);
-  font-weight: 700;
-  letter-spacing: .055em;
-}
-
-.registration-panel,
-.auth-panel,
-.service-request-form,
-.used-parts-form,
-.modal {
-  border-radius: 18px;
-}
-
-.registration-form input,
-.service-request-form input,
-.service-request-form textarea,
-.service-request-form select,
-.used-parts-form input,
-.used-parts-form textarea,
-.modal input,
-.modal textarea,
-.modal select,
-.delivery-label select {
-  font-family: var(--font-body);
-  border-radius: 10px;
-}
-
-.registration-form label,
-.service-request-form label,
-.used-parts-form label,
-.modal label,
-.delivery-label {
-  font-family: var(--font-body);
-  font-weight: 600;
-  letter-spacing: .045em;
-}
-
-.registration-form input {
-  font-family: var(--font-body);
-  border-radius: 10px;
-}
-
-.button {
-  border-radius: 999px;
-}
-
-.customer-data p,
-.referral-generator strong,
-.history-list > div > span {
-  font-family: var(--font-body);
-}
-
-@media (max-width: 720px) {
-  .hero h1 {
-    font-size: clamp(46px, 14vw, 66px);
-    line-height: .9;
-  }
-
-  .section-heading h2,
-  .cta-section h2,
-  .auth-copy h2,
-  .account-heading h2,
-  .account-empty h2,
-  .about-contact h2 {
-    font-size: clamp(36px, 11vw, 52px);
-    line-height: .94;
-  }
-
-  .registration-panel,
-  .auth-panel,
-  .service-request-form,
-  .used-parts-form {
-    border-radius: 14px;
-  }
-}
-/* ==========================================================
-   ZÉNIT — EFECTO DE VIDRIO EN CARDS DEL INICIO
-   Pegar al FINAL de app/globals.css
-   ========================================================== */
-
-.directory-grid > a {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  box-shadow:
-    0 18px 38px rgba(0, 0, 0, 0.28),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  transition:
-    transform 0.45s cubic-bezier(0.2, 0.75, 0.25, 1),
-    border-color 0.45s ease,
-    box-shadow 0.45s ease,
-    background 0.45s ease;
-}
-
-/* Reflejo diagonal que permanece fuera de la card hasta el hover. */
-.directory-grid > a::before {
-  content: "";
-  position: absolute;
-  z-index: 0;
-  top: -85%;
-  left: -75%;
-  width: 42%;
-  height: 270%;
-  pointer-events: none;
-  opacity: 0;
-  transform: rotate(24deg) translate3d(-170%, 0, 0);
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(151, 194, 255, 0.02) 20%,
-    rgba(219, 236, 255, 0.16) 43%,
-    rgba(255, 255, 255, 0.58) 50%,
-    rgba(151, 194, 255, 0.15) 57%,
-    transparent 100%
-  );
-  filter: blur(1px);
-}
-
-/* Mantiene texto y enlaces por encima del reflejo. */
-.directory-grid > a > * {
-  position: relative;
-  z-index: 1;
-}
-
-.directory-grid > a:hover,
-.directory-grid > a:focus-visible {
-  transform: translateY(-9px) scale(1.012);
-  border-color: rgba(174, 205, 255, 0.62);
-  background: linear-gradient(
-    145deg,
-    rgba(111, 157, 220, 0.14),
-    rgba(255, 255, 255, 0.025) 55%,
-    rgba(72, 105, 158, 0.08)
-  );
-  box-shadow:
-    0 25px 52px rgba(0, 0, 0, 0.48),
-    0 0 30px rgba(79, 137, 219, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.13);
-}
-
-.directory-grid > a:hover::before,
-.directory-grid > a:focus-visible::before {
-  opacity: 1;
-  animation: zenit-glass-sweep 1.05s cubic-bezier(0.2, 0.72, 0.25, 1) forwards;
-}
-
-.directory-grid > a:focus-visible {
-  outline: 2px solid rgba(190, 218, 255, 0.82);
-  outline-offset: 4px;
-}
-
-@keyframes zenit-glass-sweep {
-  0% {
-    opacity: 0;
-    transform: rotate(24deg) translate3d(-170%, 0, 0);
-  }
-  18% {
-    opacity: 1;
-  }
-  82% {
-    opacity: 0.9;
-  }
-  100% {
-    opacity: 0;
-    transform: rotate(24deg) translate3d(620%, 0, 0);
-  }
-}
-
-/* En pantallas táctiles conserva profundidad sin animaciones accidentales. */
-@media (hover: none) {
-  .directory-grid > a:active {
-    transform: scale(0.985);
-    border-color: rgba(174, 205, 255, 0.5);
-  }
-}
-
-/* Accesibilidad: elimina desplazamiento cuando el usuario reduce movimiento. */
-@media (prefers-reduced-motion: reduce) {
-  .directory-grid > a::before {
-    display: none;
-  }
-
-  .directory-grid > a:hover,
-  .directory-grid > a:focus-visible {
-    transform: none;
-  }
-}
-/* ==========================================================
-   ZÉNIT — VIDRIO AZUL EN REGISTRO, TIENDA Y SERVICIOS
-   Pegar este bloque al FINAL de app/globals.css
-   ========================================================== */
-
-/* Cards que comparten el mismo lenguaje visual del inicio. */
+/* Reflejo de vidrio blanco: lento y uniforme en todas las cards. */
+.directory-grid > a,
 .benefit-strip > div,
 .service-card,
 .product-card {
   position: relative;
-  isolation: isolate;
   overflow: hidden;
-  transition:
-    transform 0.45s cubic-bezier(0.2, 0.75, 0.25, 1),
-    border-color 0.45s ease,
-    box-shadow 0.45s ease,
-    background 0.45s ease;
+  transition: transform .4s ease, border-color .4s ease, box-shadow .4s ease;
 }
 
-/* Reflejo diagonal: cruza la superficie como luz sobre vidrio. */
+.directory-grid > a::after,
 .benefit-strip > div::after,
 .service-card::after,
 .product-card::after {
   content: "";
   position: absolute;
-  z-index: 4;
-  top: -90%;
-  left: -78%;
-  width: 42%;
-  height: 280%;
+  z-index: 3;
+  top: -45%;
+  left: -75%;
+  width: 38%;
+  height: 190%;
   pointer-events: none;
   opacity: 0;
-  transform: rotate(24deg) translate3d(-170%, 0, 0);
+  transform: rotate(24deg);
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(123, 176, 245, 0.02) 18%,
-    rgba(188, 220, 255, 0.17) 42%,
-    rgba(255, 255, 255, 0.62) 50%,
-    rgba(124, 182, 255, 0.18) 58%,
+    rgba(255,255,255,.08) 22%,
+    rgba(255,255,255,.62) 50%,
+    rgba(255,255,255,.08) 78%,
     transparent 100%
   );
   filter: blur(1px);
-  mix-blend-mode: screen;
+  transition: left 1.65s cubic-bezier(.2,.65,.25,1), opacity .35s ease;
 }
 
+.directory-grid > a:hover,
+.directory-grid > a:focus-visible,
 .benefit-strip > div:hover,
-.benefit-strip > div:focus-within,
 .service-card:hover,
 .service-card:focus-within,
 .product-card:hover,
 .product-card:focus-within {
-  transform: translateY(-9px) scale(1.012);
-  border-color: rgba(174, 205, 255, 0.64);
-  background-color: rgba(12, 24, 39, 0.96);
-  box-shadow:
-    0 25px 54px rgba(0, 0, 0, 0.48),
-    0 0 32px rgba(73, 137, 224, 0.16),
-    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  transform: translateY(-5px);
+  border-color: rgba(255,255,255,.5);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 22px 52px rgba(255,255,255,.08);
 }
 
+.directory-grid > a:hover::after,
+.directory-grid > a:focus-visible::after,
 .benefit-strip > div:hover::after,
-.benefit-strip > div:focus-within::after,
 .service-card:hover::after,
 .service-card:focus-within::after,
 .product-card:hover::after,
 .product-card:focus-within::after {
-  animation: zenit-glass-sweep-sections 1.05s cubic-bezier(0.2, 0.72, 0.25, 1) forwards;
+  left: 138%;
+  opacity: .72;
 }
 
-@keyframes zenit-glass-sweep-sections {
-  0% {
-    opacity: 0;
-    transform: rotate(24deg) translate3d(-170%, 0, 0);
-  }
-  18% { opacity: 1; }
-  82% { opacity: 0.9; }
-  100% {
-    opacity: 0;
-    transform: rotate(24deg) translate3d(650%, 0, 0);
-  }
-}
-
-/* En táctil: respuesta breve al toque, sin disparar un barrido permanente. */
 @media (hover: none) {
-  .benefit-strip > div:active,
-  .service-card:active,
-  .product-card:active {
-    transform: scale(0.985);
-    border-color: rgba(174, 205, 255, 0.5);
-    box-shadow: 0 0 24px rgba(73, 137, 224, 0.12);
-  }
-}
-
-/* En móvil reduce el desplazamiento para conservar estabilidad visual. */
-@media (max-width: 720px) {
+  .directory-grid > a:hover,
   .benefit-strip > div:hover,
-  .benefit-strip > div:focus-within,
   .service-card:hover,
-  .service-card:focus-within,
-  .product-card:hover,
-  .product-card:focus-within {
-    transform: translateY(-4px);
+  .product-card:hover {
+    transform: none;
   }
 }
 
-/* Accesibilidad: respeta la preferencia de reducir movimiento. */
 @media (prefers-reduced-motion: reduce) {
-  .benefit-strip > div,
-  .service-card,
-  .product-card {
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  }
-
+  .directory-grid > a::after,
   .benefit-strip > div::after,
   .service-card::after,
   .product-card::after {
     display: none;
-  }
-
-  .benefit-strip > div:hover,
-  .benefit-strip > div:focus-within,
-  .service-card:hover,
-  .service-card:focus-within,
-  .product-card:hover,
-  .product-card:focus-within {
-    transform: none;
   }
 }

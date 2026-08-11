@@ -134,7 +134,7 @@ export default function Home() {
         `Fecha preferida: ${payload.preferredDate || "Por coordinar"}`,
         `Hora preferida: ${payload.preferredTime || "Por coordinar"}`,
         "",
-        "Entiendo que la fecha debe ser confirmada por el taller.",
+        "Entiendo que la fecha debe ser confirmada por el salón.",
       ].join("\n");
 
       window.open(`https://wa.me/50671246337?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
@@ -271,7 +271,7 @@ export default function Home() {
         <div className="hero-grid" aria-hidden="true" />
         <div className="hero-glow" aria-hidden="true" />
         <div className="hero-copy">
-          
+          <p className="eyebrow"><span /> Estilo · belleza · bienestar</p>
           <h1><span>El punto máximo</span><em>de tu belleza.</em></h1>
           <p className="hero-lead">
             Una experiencia personalizada para renovar tu imagen con técnica, cuidado y elegancia.
@@ -294,6 +294,13 @@ export default function Home() {
             <img src="/logo-zenit.png" alt="Logo de Zénit Salón" />
           </div>
         </div>
+      </section>}
+
+      {isHome && <section className="metrics" aria-label="Ventajas del salón">
+          <div><strong>Zénit</strong><span>el punto máximo</span></div>
+        <div><strong>Atención</strong><span>clara y profesional</span></div>
+        <div><strong>Técnicos</strong><span>especializados</span></div>
+        <div><strong>Calidad</strong><span>garantizada</span></div>
       </section>}
 
       {isHome && <section className="section home-directory">
@@ -418,7 +425,7 @@ export default function Home() {
         <div className="benefit-strip">
           <div><span>01</span><strong>Comprá o recibí un servicio</strong><p>Sumás puntos personales por cada transacción confirmada.</p></div>
           <div><span>02</span><strong>Invitá con un código</strong><p>Cada código es único, vence en tres días y funciona una sola vez.</p></div>
-          <div><span>03</span><strong>Tu red también suma</strong><p>Ganás puntos cuando tus referidos compran o visitan el taller.</p></div>
+          <div><span>03</span><strong>Tu red también suma</strong><p>Ganás puntos cuando tus referidos compran productos o reservan servicios en Zénit.</p></div>
         </div>
       </section>}
 
@@ -426,7 +433,7 @@ export default function Home() {
         <div className="auth-copy">
           <p className="eyebrow"><span /> Acceso Club Zénit</p>
           <h2>Tu estilo, tus puntos y tu historial en un solo lugar.</h2>
-          <p>Ingresá de forma segura para consultar tu tarjeta digital, tus puntos y la actividad registrada por el taller.</p>
+          <p>Ingresá de forma segura para consultar tu tarjeta digital, tus puntos y la actividad registrada por el salón.</p>
           <div className="auth-features">
             <span>✓ Tarjeta digital</span>
             <span>✓ Recompensas</span>
@@ -504,7 +511,7 @@ export default function Home() {
             </div>
 
             <div className="account-section">
-              <div className="subheading"><div><p className="eyebrow"><span /> Beneficios</p><h3>Recompensas disponibles</h3></div><p>Los puntos se descuentan únicamente cuando el beneficio es confirmado por el taller.</p></div>
+              <div className="subheading"><div><p className="eyebrow"><span /> Beneficios</p><h3>Recompensas disponibles</h3></div><p>Los puntos se descuentan únicamente cuando el beneficio es confirmado por el salón.</p></div>
               <div className="reward-grid">{rewards.map((reward) => {
                 const unlocked = totalPoints >= reward.points;
                 return <article className={unlocked ? "reward-card unlocked" : "reward-card"} key={reward.title}><span>{reward.points} pts</span><h4>{reward.title}</h4><p>{reward.detail}</p><button disabled={!unlocked}>{unlocked ? "Canjear beneficio" : `Te faltan ${reward.points - totalPoints} pts`}</button></article>;
@@ -527,7 +534,7 @@ export default function Home() {
                       <span>{new Date(movement.created_at).toLocaleDateString("es-CR", { day: "2-digit", month: "short" }).toUpperCase()}</span>
                       <p><strong>{movement.description}</strong><small>{movement.points >= 0 ? "+" : ""}{movement.points} pts</small></p>
                     </div>
-                  )) : <p className="empty-history">Tus movimientos aparecerán aquí cuando el taller confirme una compra, servicio o ajuste.</p>}
+                  )) : <p className="empty-history">Tus movimientos aparecerán aquí cuando el salón confirme una compra, servicio o ajuste.</p>}
                 </div>
               </div>
             </div>
