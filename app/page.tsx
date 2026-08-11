@@ -270,9 +270,11 @@ export default function Home() {
       {isHome && <section className="hero" id="inicio">
         <div className="hero-grid" aria-hidden="true" />
         <div className="hero-glow" aria-hidden="true" />
+        <div className="hero-aurora" aria-hidden="true" />
+        <div className="hero-sparkles" aria-hidden="true"><i /><i /><i /><i /></div>
         <div className="hero-copy">
           <p className="eyebrow"><span /> Estilo · belleza · bienestar</p>
-          <h1>Tu belleza alcanza <em>su punto máximo.</em></h1>
+          <h1><span>El punto máximo</span><em>de tu belleza.</em></h1>
           <p className="hero-lead">
             Una experiencia personalizada para renovar tu imagen con técnica, cuidado y elegancia.
           </p>
