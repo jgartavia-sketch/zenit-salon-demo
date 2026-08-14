@@ -1119,19 +1119,32 @@ footer {
 .footer-contact span {
   display: block;
   color: #f5f6f7;
-  font-family: var(--font-zenit-display), Georgia, "Times New Roman", serif;
-  font-size: 18px;
-  font-weight: 500;
-  letter-spacing: .01em;
+  font-family: var(--font-zenit-body), Arial, Helvetica, sans-serif !important;
+  font-size: 15px;
+  font-weight: 400;
+  font-style: normal;
+  line-height: 1.55;
+  letter-spacing: 0;
 }
 
 .footer-copyright {
   margin: 0;
   color: #9ca3aa;
-  font-family: var(--font-zenit-display), Georgia, "Times New Roman", serif;
-  font-size: 15px;
-  font-style: italic;
+  font-family: var(--font-zenit-body), Arial, Helvetica, sans-serif !important;
+  font-size: 12px;
+  font-weight: 400;
+  font-style: normal;
+  line-height: 1.5;
+  letter-spacing: .01em;
   white-space: nowrap;
+}
+
+footer p,
+footer span,
+footer strong,
+footer a {
+  font-family: var(--font-zenit-body), Arial, Helvetica, sans-serif !important;
+  font-style: normal;
 }
 
 @media (max-width: 900px) {
