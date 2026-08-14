@@ -305,8 +305,8 @@ export default function Home() {
 
       {isHome && <section className="section home-directory">
         <div className="section-heading">
-          <div><p className="eyebrow"><span /> Todo Zénit</p><h2>Elegí tu próxima parada.</h2></div>
-          <p>Cada área tiene ahora su propio espacio para que encontrés lo que necesitás sin recorrer una página interminable.</p>
+          <div><p className="eyebrow"><span /> Todo Zénit</p><h2>Todo para elevar tu estilo.</h2></div>
+          <p>Descubrí el Club Zénit, nuestra tienda, servicios y todo lo que hace de tu visita una experiencia completa.</p>
         </div>
         <div className="directory-grid">
           <Link href="/registro"><span>01</span><h3>Club Zénit</h3><p>Creá tu tarjeta, consultá puntos y compartí códigos de referido.</p><b>Ir a Registro →</b></Link>

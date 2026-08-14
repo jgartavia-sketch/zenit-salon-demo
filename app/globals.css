@@ -906,3 +906,109 @@ nav a.active,
     display: none;
   }
 }
+
+/* Inicio Zénit: cards blancas con el mismo lenguaje visual de la tienda. */
+.home-directory {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(45, 73, 110, .10), transparent 34%),
+    linear-gradient(180deg, #fbfcfe 0%, #f3f6f9 48%, #ffffff 100%);
+  color: #071426;
+}
+
+.home-directory .section-heading h2 {
+  color: #071426;
+}
+
+.home-directory .section-heading > p {
+  color: #566577;
+}
+
+.home-directory .eyebrow {
+  color: #173557;
+  background: none;
+  -webkit-text-fill-color: currentColor;
+}
+
+.home-directory .eyebrow span {
+  background: #173557;
+  box-shadow: none;
+}
+
+.directory-grid > a {
+  min-height: 270px;
+  padding: 28px 24px;
+  border: 1px solid rgba(10, 31, 53, .11);
+  border-radius: 26px;
+  background: linear-gradient(145deg, rgba(255,255,255,.98), rgba(241,245,249,.92));
+  color: #071426;
+  box-shadow:
+    0 18px 45px rgba(20, 36, 55, .08),
+    inset 0 1px 0 rgba(255,255,255,.95);
+  transition:
+    transform .45s ease,
+    box-shadow .45s ease,
+    border-color .45s ease;
+}
+
+.directory-grid > a::before {
+  display: none;
+}
+
+.directory-grid span {
+  color: #173557;
+  background: none;
+  -webkit-text-fill-color: currentColor;
+}
+
+.directory-grid h3 {
+  color: #0a1c31;
+}
+
+.directory-grid p {
+  color: #566577;
+}
+
+.directory-grid b {
+  color: #0d2d50;
+}
+
+.directory-grid > a::after {
+  top: -42%;
+  left: -70%;
+  width: 34%;
+  height: 190%;
+  opacity: 0;
+  transform: rotate(20deg);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255,255,255,.2),
+    rgba(255,255,255,.98),
+    rgba(255,255,255,.2),
+    transparent
+  );
+  transition: left 1.7s cubic-bezier(.2,.65,.25,1), opacity .35s ease;
+}
+
+.directory-grid > a:hover,
+.directory-grid > a:focus-visible {
+  transform: translateY(-7px);
+  border-color: rgba(21, 56, 93, .26);
+  background: linear-gradient(145deg, rgba(255,255,255,.98), rgba(241,245,249,.92));
+  box-shadow:
+    0 28px 68px rgba(17, 38, 62, .14),
+    inset 0 1px 0 #fff;
+}
+
+.directory-grid > a:hover::after,
+.directory-grid > a:focus-visible::after {
+  left: 140%;
+  opacity: .72;
+}
+
+@media (max-width: 720px) {
+  .directory-grid > a:hover,
+  .directory-grid > a:focus-visible {
+    transform: translateY(-3px);
+  }
+}
