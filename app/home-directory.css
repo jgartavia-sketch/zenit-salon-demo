@@ -1,14 +1,14 @@
 /* =========================================================
    ZÉNIT SALÓN — HOME DIRECTORY
    Este archivo SOLO estiliza las 4 cards de "Todo Zénit".
-   Está pensado para cargarse después de globals.css.
+   Se carga después de globals.css.
    ========================================================= */
 
 .home-directory {
   background:
     radial-gradient(
       circle at 80% 0%,
-      rgba(174, 181, 189, 0.1),
+      rgba(174, 181, 189, 0.12),
       transparent 36%
     ),
     #070707;
@@ -23,90 +23,142 @@
 .directory-grid > a {
   position: relative;
   overflow: hidden;
+  isolation: isolate;
   min-height: 300px;
   padding: 30px 26px;
   display: flex;
   flex-direction: column;
-  border: 1px solid rgba(10, 31, 53, 0.11);
+
+  border: 1px solid rgba(183, 198, 214, 0.72);
   border-radius: 26px;
+
   background:
     linear-gradient(
-      145deg,
-      rgba(255, 255, 255, 0.98),
-      rgba(241, 245, 249, 0.92)
+      112deg,
+      rgba(255, 255, 255, 0.98) 0%,
+      rgba(225, 231, 237, 0.96) 18%,
+      rgba(250, 252, 254, 0.99) 37%,
+      rgba(190, 200, 210, 0.94) 56%,
+      rgba(247, 249, 251, 0.98) 76%,
+      rgba(207, 216, 225, 0.96) 100%
     );
+
+  background-size: 180% 180%;
+
   box-shadow:
-    0 18px 45px rgba(20, 36, 55, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    inset 0 -1px 0 rgba(85, 105, 126, 0.18),
+    inset 1px 0 0 rgba(255, 255, 255, 0.65),
+    0 18px 45px rgba(20, 36, 55, 0.12),
+    0 0 0 1px rgba(255, 255, 255, 0.2);
+
   color: #071426;
   text-decoration: none;
+
   transition:
-    transform 0.45s ease,
-    box-shadow 0.45s ease,
-    border-color 0.45s ease;
+    transform 0.48s cubic-bezier(0.2, 0.65, 0.25, 1),
+    box-shadow 0.48s ease,
+    border-color 0.48s ease,
+    background-position 0.8s ease;
 }
 
+/* Brillo metálico ambiental fijo */
 .directory-grid > a::before {
-  content: none !important;
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  pointer-events: none;
+
+  background:
+    radial-gradient(
+      circle at 16% 8%,
+      rgba(255, 255, 255, 0.92),
+      transparent 23%
+    ),
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.34) 0%,
+      transparent 25%,
+      rgba(91, 126, 160, 0.08) 52%,
+      transparent 72%,
+      rgba(255, 255, 255, 0.3) 100%
+    );
+
+  opacity: 0.72;
 }
 
+/* Franja de luz blanca que cruza la card en hover */
 .directory-grid > a::after {
   content: "";
   position: absolute;
   z-index: 5;
-  top: -42%;
-  left: -70%;
-  width: 34%;
-  height: 190%;
+  top: -48%;
+  left: -78%;
+  width: 31%;
+  height: 205%;
   pointer-events: none;
+
   opacity: 0;
-  transform: rotate(20deg);
+  transform: rotate(19deg);
+
   background:
     linear-gradient(
       90deg,
-      transparent,
-      rgba(255, 255, 255, 0.2),
-      rgba(255, 255, 255, 0.98),
-      rgba(255, 255, 255, 0.2),
-      transparent
+      transparent 0%,
+      rgba(255, 255, 255, 0.08) 15%,
+      rgba(255, 255, 255, 0.52) 37%,
+      rgba(255, 255, 255, 1) 50%,
+      rgba(255, 255, 255, 0.56) 63%,
+      rgba(255, 255, 255, 0.08) 85%,
+      transparent 100%
     );
-  filter: none;
+
+  filter: blur(0.2px);
+
   transition:
-    left 1.7s cubic-bezier(0.2, 0.65, 0.25, 1),
-    opacity 0.35s ease;
+    left 1.9s cubic-bezier(0.18, 0.68, 0.22, 1),
+    opacity 0.28s ease;
 }
 
 .directory-grid > a:hover,
 .directory-grid > a:focus-visible {
-  transform: translateY(-7px);
-  border-color: rgba(21, 56, 93, 0.26);
-  background:
-    linear-gradient(
-      145deg,
-      rgba(255, 255, 255, 0.98),
-      rgba(241, 245, 249, 0.92)
-    );
+  transform: translateY(-8px);
+  border-color: rgba(223, 238, 252, 0.98);
+  background-position: 100% 50%;
+
   box-shadow:
-    0 28px 68px rgba(17, 38, 62, 0.14),
-    inset 0 1px 0 #ffffff;
+    inset 0 1px 0 #ffffff,
+    inset 0 -1px 0 rgba(78, 105, 132, 0.22),
+    inset 1px 0 0 rgba(255, 255, 255, 0.82),
+    0 28px 68px rgba(17, 38, 62, 0.17),
+    0 0 18px rgba(178, 211, 242, 0.22),
+    0 0 0 1px rgba(255, 255, 255, 0.48);
+}
+
+.directory-grid > a:hover::before,
+.directory-grid > a:focus-visible::before {
+  opacity: 0.9;
 }
 
 .directory-grid > a:hover::after,
 .directory-grid > a:focus-visible::after {
-  left: 140%;
-  opacity: 0.72;
+  left: 148%;
+  opacity: 0.9;
 }
 
 .directory-grid > a > span {
   position: relative;
   z-index: 2;
   display: block;
-  color: #6e7c8c !important;
+
+  color: #63788d !important;
   background: none !important;
   background-image: none !important;
   -webkit-background-clip: initial !important;
   background-clip: initial !important;
-  -webkit-text-fill-color: #6e7c8c !important;
+  -webkit-text-fill-color: #63788d !important;
+
   font-family: var(--font-zenit-body), Arial, sans-serif;
   font-size: 0.76rem;
   font-weight: 800;
@@ -116,19 +168,27 @@
 .directory-grid > a h3 {
   position: relative;
   z-index: 2;
+
   margin: auto 0 12px;
-  color: #0a1c31;
+
+  color: #071b30;
+
   font-family: var(--font-zenit-display), Georgia, serif;
   font-size: 1.55rem;
   font-weight: 600;
   line-height: 1.15;
+
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.75);
 }
 
 .directory-grid > a p {
   position: relative;
   z-index: 2;
+
   margin: 0 0 24px;
-  color: #556779;
+
+  color: #4f657a;
+
   font-family: var(--font-zenit-body), Arial, sans-serif;
   font-size: 0.95rem;
   line-height: 1.65;
@@ -137,14 +197,45 @@
 .directory-grid > a b {
   position: relative;
   z-index: 2;
+
   display: block;
   padding-top: 16px;
-  border-top: 1px solid rgba(12, 35, 59, 0.09);
-  color: #0d2d50;
+
+  border-top: 1px solid rgba(31, 68, 104, 0.14);
+
+  color: #082f57;
+
   font-family: var(--font-zenit-body), Arial, sans-serif;
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.04em;
+}
+
+.directory-grid > a b::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: -1px;
+
+  width: 0;
+  height: 1px;
+
+  background:
+    linear-gradient(
+      90deg,
+      #79aee0,
+      #ffffff,
+      #8ab8df
+    );
+
+  box-shadow: 0 0 7px rgba(105, 165, 220, 0.32);
+
+  transition: width 0.55s ease;
+}
+
+.directory-grid > a:hover b::after,
+.directory-grid > a:focus-visible b::after {
+  width: 100%;
 }
 
 @media (max-width: 1050px) {
@@ -172,7 +263,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .directory-grid > a,
-  .directory-grid > a::after {
+  .directory-grid > a::after,
+  .directory-grid > a b::after {
     transition: none;
   }
 

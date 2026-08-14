@@ -1,0 +1,398 @@
+/*
+  ZÉNIT SALÓN — Luxury visual overrides
+  --------------------------------------
+  Este archivo NO reemplaza globals.css.
+  Se carga después de los estilos existentes y modifica únicamente:
+  1) header global
+  2) navegación global
+  3) hero de Inicio
+*/
+
+/* =========================================================
+   HEADER — NEGRO METÁLICO / PINTURA DE AUTO PREMIUM
+   ========================================================= */
+
+.site-header {
+  isolation: isolate;
+  overflow: visible;
+  border-bottom: 1px solid rgba(214, 225, 238, .22);
+  background:
+    linear-gradient(
+      110deg,
+      rgba(255,255,255,.075) 0%,
+      rgba(255,255,255,.012) 16%,
+      rgba(117,139,162,.055) 31%,
+      rgba(255,255,255,.09) 47%,
+      rgba(255,255,255,.014) 63%,
+      rgba(85,112,140,.055) 79%,
+      rgba(255,255,255,.045) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(18,21,25,.98) 0%,
+      rgba(6,8,11,.985) 54%,
+      rgba(2,4,7,.99) 100%
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.15),
+    inset 0 -1px 0 rgba(0,0,0,.85),
+    0 9px 30px rgba(0,0,0,.24),
+    0 1px 0 rgba(144,178,214,.15);
+  backdrop-filter: blur(20px) saturate(125%);
+  -webkit-backdrop-filter: blur(20px) saturate(125%);
+}
+
+.site-header::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
+  opacity: .8;
+  background:
+    linear-gradient(
+      105deg,
+      transparent 0%,
+      transparent 31%,
+      rgba(255,255,255,.055) 40%,
+      rgba(199,218,238,.12) 47%,
+      rgba(255,255,255,.045) 54%,
+      transparent 63%,
+      transparent 100%
+    );
+}
+
+.site-header::after {
+  content: "";
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  bottom: -1px;
+  height: 1px;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(116, 157, 201, .14) 15%,
+      rgba(231, 241, 251, .66) 48%,
+      rgba(107, 151, 199, .20) 82%,
+      transparent 100%
+    );
+  box-shadow: 0 0 10px rgba(130, 178, 226, .14);
+}
+
+.site-header .brand img {
+  filter:
+    brightness(1.08)
+    contrast(1.08)
+    drop-shadow(0 1px 0 rgba(255,255,255,.12))
+    drop-shadow(0 7px 16px rgba(0,0,0,.36));
+}
+
+
+/* =========================================================
+   NAVBAR — SUBRAYADO AZUL / PLATEADO
+   ========================================================= */
+
+.site-header nav a {
+  position: relative;
+  color: #c5cbd2;
+  transition:
+    color .28s ease,
+    text-shadow .28s ease;
+}
+
+.site-header nav a::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 3px;
+  width: 0;
+  height: 2px;
+  border-radius: 999px;
+  transform: translateX(-50%);
+  opacity: 0;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(87, 143, 199, 0),
+      #7eb7ef 20%,
+      #edf7ff 50%,
+      #8ebfea 78%,
+      rgba(87, 143, 199, 0)
+    );
+  box-shadow:
+    0 0 7px rgba(121, 179, 236, .38),
+    0 0 15px rgba(219, 239, 255, .13);
+  transition:
+    width .34s cubic-bezier(.2,.7,.2,1),
+    opacity .25s ease;
+}
+
+.site-header nav a:hover,
+.site-header nav a.active {
+  color: #fff;
+  text-shadow: 0 0 12px rgba(212, 231, 249, .16);
+}
+
+.site-header nav a:hover::after,
+.site-header nav a.active::after {
+  width: 74%;
+  opacity: 1;
+}
+
+
+/* =========================================================
+   HERO DE INICIO — DIFUMINADO BLANCO / PLATEADO / AZUL
+   Mantiene la imagen actual: /images/hero-zenit.jpg
+   ========================================================= */
+
+.hero {
+  color: #0a1b2e;
+  background-color: #eef3f7;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255,255,255,.985) 0%,
+      rgba(252,253,255,.96) 17%,
+      rgba(242,247,252,.89) 35%,
+      rgba(226,236,246,.66) 50%,
+      rgba(211,226,240,.28) 64%,
+      rgba(203,221,238,.08) 77%,
+      rgba(255,255,255,0) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,.15) 0%,
+      rgba(236,244,251,.05) 62%,
+      rgba(240,246,251,.22) 100%
+    ),
+    url("/images/hero-zenit.jpg") center center / cover no-repeat;
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      circle at 18% 38%,
+      rgba(255,255,255,.95) 0%,
+      rgba(255,255,255,.48) 24%,
+      transparent 52%
+    ),
+    radial-gradient(
+      circle at 47% 72%,
+      rgba(169, 202, 232, .18),
+      transparent 35%
+    );
+}
+
+.hero-grid {
+  z-index: 1;
+  opacity: .055;
+  background-image:
+    linear-gradient(rgba(29,68,107,.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(29,68,107,.12) 1px, transparent 1px);
+  mask-image: linear-gradient(to right, #000, transparent 60%);
+  -webkit-mask-image: linear-gradient(to right, #000, transparent 60%);
+}
+
+.hero-glow {
+  z-index: 1;
+  right: 4%;
+  top: 16%;
+  width: 560px;
+  height: 560px;
+  background:
+    radial-gradient(
+      circle,
+      rgba(255,255,255,.58),
+      rgba(151, 192, 231, .18) 35%,
+      rgba(107, 157, 205, .07) 52%,
+      transparent 72%
+    );
+  filter: blur(62px);
+}
+
+.hero-copy,
+.hero-visual {
+  z-index: 2;
+}
+
+.hero h1 {
+  color: #071a2f;
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.75),
+    0 8px 28px rgba(45, 82, 119, .09);
+}
+
+.hero h1 em {
+  background:
+    linear-gradient(
+      110deg,
+      #09233d 0%,
+      #4f7195 22%,
+      #c7d9ea 42%,
+      #6e91b4 58%,
+      #173957 78%,
+      #8daac5 100%
+    );
+  background-size: 190% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 6px rgba(43, 77, 111, .10));
+}
+
+.hero .eyebrow {
+  color: #244663;
+  -webkit-text-fill-color: #244663;
+  background: none;
+}
+
+.hero .eyebrow span {
+  background:
+    linear-gradient(
+      90deg,
+      #315b80,
+      #d7e6f4,
+      #628bad
+    );
+  box-shadow: 0 0 8px rgba(92, 139, 181, .18);
+}
+
+.hero-lead {
+  color: #536b80;
+}
+
+.hero .trust-row {
+  color: #344d63;
+}
+
+.hero .trust-row b {
+  color: #35658e;
+}
+
+.hero .button-ghost {
+  border-color: rgba(42, 76, 107, .22);
+  color: #102c46;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.76),
+      rgba(225,235,244,.62)
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.95),
+    0 10px 25px rgba(53, 87, 119, .08);
+}
+
+.hero .button-ghost:hover {
+  border-color: rgba(52, 97, 138, .34);
+  color: #081f35;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.95),
+      rgba(216,230,243,.82)
+    );
+  box-shadow:
+    inset 0 1px 0 #fff,
+    0 15px 34px rgba(54, 94, 132, .14);
+}
+
+/* El logo central conserva profundidad, pero sin una nube negra alrededor. */
+.hero .logo-stage::before {
+  background:
+    radial-gradient(
+      circle at 38% 28%,
+      rgba(255,255,255,.46),
+      rgba(193, 213, 232, .16) 34%,
+      rgba(103, 145, 184, .05) 55%,
+      transparent 72%
+    );
+  box-shadow:
+    0 0 110px rgba(221, 235, 247, .25),
+    inset 0 0 50px rgba(255,255,255,.12);
+}
+
+.hero .logo-stage img {
+  filter:
+    brightness(1.13)
+    contrast(1.06)
+    drop-shadow(0 0 9px rgba(255,255,255,.27))
+    drop-shadow(0 24px 34px rgba(18, 42, 65, .18));
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1050px) {
+  .site-header nav a::after {
+    left: 15px;
+    bottom: 7px;
+    transform: none;
+  }
+
+  .site-header nav a:hover::after,
+  .site-header nav a.active::after {
+    width: 72px;
+  }
+
+  .hero {
+    background:
+      linear-gradient(
+        180deg,
+        rgba(255,255,255,.94) 0%,
+        rgba(248,251,254,.90) 30%,
+        rgba(225,237,247,.58) 56%,
+        rgba(215,231,244,.14) 74%,
+        rgba(255,255,255,0) 100%
+      ),
+      url("/images/hero-zenit.jpg") center center / cover no-repeat;
+  }
+}
+
+@media (max-width: 720px) {
+  .site-header::before {
+    opacity: .55;
+  }
+
+  .hero {
+    color: #071a2f;
+    background:
+      linear-gradient(
+        180deg,
+        rgba(255,255,255,.97) 0%,
+        rgba(251,253,255,.93) 32%,
+        rgba(231,241,249,.72) 58%,
+        rgba(216,231,244,.28) 78%,
+        rgba(255,255,255,.04) 100%
+      ),
+      url("/images/hero-zenit.jpg") center top / cover no-repeat;
+  }
+
+  .hero h1 {
+    text-shadow:
+      0 1px 0 #fff,
+      0 6px 20px rgba(41, 72, 102, .08);
+  }
+
+  .hero .hero-actions {
+    position: relative;
+    z-index: 3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-header nav a,
+  .site-header nav a::after {
+    transition: none !important;
+  }
+}

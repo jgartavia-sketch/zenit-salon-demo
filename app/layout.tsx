@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Cormorant_Garamond, Manrope } from "next/font/google";
 import "./globals.css";
 import "./home-directory.css";
+import "./luxury-theme.css";
 
 const cormorant = Cormorant_Garamond({
   variable: "--font-zenit-display",
