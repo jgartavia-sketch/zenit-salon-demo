@@ -117,6 +117,9 @@ function formatPrice(value: number) {
 export default function TiendaPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
+  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({
+    Shampoo: true,
+  });
   const [selectedQuantities, setSelectedQuantities] = useState<Record<string, number>>(
     () => Object.fromEntries(products.map((product) => [product.id, 1])),
   );
@@ -199,6 +202,13 @@ export default function TiendaPage() {
       "_blank",
       "noopener,noreferrer",
     );
+  };
+
+  const toggleCategory = (category: string) => {
+    setOpenCategories((current) => ({
+      ...current,
+      [category]: !current[category],
+    }));
   };
 
   return (
@@ -369,17 +379,37 @@ export default function TiendaPage() {
                 (product) => product.category === category,
               );
 
-              return (
-                <section className={styles.categorySection} key={category}>
-                  <div className={styles.categoryHeading}>
-                    <span>✦</span>
-                    <div>
-                      <p>Categoría</p>
-                      <h2>{category}</h2>
-                    </div>
-                  </div>
+              const isCategoryOpen = Boolean(openCategories[category]);
 
-                  <div className={styles.productGrid}>
+              return (
+                <section
+                  className={`${styles.categorySection} ${isCategoryOpen ? styles.categoryOpen : ""}`}
+                  key={category}
+                >
+                  <button
+                    type="button"
+                    className={styles.categoryToggle}
+                    onClick={() => toggleCategory(category)}
+                    aria-expanded={isCategoryOpen}
+                  >
+                    <div className={styles.categoryHeading}>
+                      <span>✦</span>
+                      <div>
+                        <p>Categoría</p>
+                        <h2>{category}</h2>
+                      </div>
+                    </div>
+
+                    <div className={styles.categoryMeta}>
+                      <span>
+                        {categoryProducts.length} {categoryProducts.length === 1 ? "producto" : "productos"}
+                      </span>
+                      <b aria-hidden="true">+</b>
+                    </div>
+                  </button>
+
+                  <div className={styles.categoryContent} aria-hidden={!isCategoryOpen}>
+                    <div className={styles.productGrid}>
                     {categoryProducts.map((product) => {
                       const selectedQuantity = selectedQuantities[product.id] || 1;
 
@@ -442,6 +472,7 @@ export default function TiendaPage() {
                         </article>
                       );
                     })}
+                    </div>
                   </div>
                 </section>
               );
