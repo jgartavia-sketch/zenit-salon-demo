@@ -296,7 +296,17 @@ nav a:hover { color: white; }
 .contact-details a:hover { color: white; }
 .cta-section { padding: 80px clamp(24px, 7vw, 110px); display: flex; align-items: center; justify-content: space-between; gap: 40px; background: linear-gradient(100deg,#15191d,#08090a); border-block: 1px solid var(--line); }
 .cta-section h2 { max-width: 850px; }
-footer { padding: 38px clamp(24px, 7vw, 110px); display: flex; align-items: center; justify-content: space-between; gap: 30px; color: var(--muted); font-size: 10px; }
+
+/* Footer base */
+footer {
+  padding: 38px clamp(24px, 7vw, 110px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+  color: var(--muted);
+  font-size: 10px;
+}
 .footer-brand { min-width: auto; }
 .footer-contact { display: flex; flex-wrap: wrap; justify-content: center; gap: 22px 34px; }
 .footer-contact p { margin: 0; color: #b9bec3; line-height: 1.55; }
@@ -1010,5 +1020,157 @@ nav a.active,
   .directory-grid > a:hover,
   .directory-grid > a:focus-visible {
     transform: translateY(-3px);
+  }
+}
+
+/* FIX DEFINITIVO — encabezado Todo Zénit en fondo oscuro */
+.home-directory {
+  background:
+    radial-gradient(circle at 80% 0%, rgba(174,181,189,.10), transparent 36%),
+    #070707;
+  color: var(--white);
+}
+
+.home-directory .section-heading h2 {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  background: none !important;
+  background-image: none !important;
+  background-clip: initial !important;
+  -webkit-background-clip: initial !important;
+  filter: none !important;
+}
+
+.home-directory .section-heading > p {
+  color: #c9cdd2 !important;
+  -webkit-text-fill-color: #c9cdd2 !important;
+  background: none !important;
+  background-image: none !important;
+  background-clip: initial !important;
+  -webkit-background-clip: initial !important;
+  filter: none !important;
+}
+
+.home-directory .section-heading .eyebrow {
+  color: #d9dde1 !important;
+  -webkit-text-fill-color: #d9dde1 !important;
+  background: none !important;
+  background-image: none !important;
+}
+
+.home-directory .section-heading .eyebrow span {
+  background: #ffffff !important;
+}
+
+/* =========================================================
+   FOOTER ZÉNIT — limpio, sin redundancia y más elegante
+   ========================================================= */
+footer {
+  padding: 44px clamp(24px, 7vw, 110px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 44px;
+  border-top: 1px solid rgba(255,255,255,.08);
+  color: #c7cbd0;
+  background: #050607;
+  font-family: var(--font-zenit-body), Arial, sans-serif;
+}
+
+.footer-brand {
+  min-width: auto;
+  display: flex;
+  align-items: center;
+}
+
+.footer-brand img {
+  width: 210px;
+  height: auto;
+  display: block;
+  object-fit: contain;
+  border-radius: 0;
+  filter: drop-shadow(0 8px 18px rgba(255,255,255,.06));
+}
+
+.footer-contact {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 38px 60px;
+}
+
+.footer-contact p {
+  margin: 0;
+  color: #f2f4f6;
+  line-height: 1.45;
+}
+
+.footer-contact strong {
+  display: block;
+  margin-bottom: 7px;
+  color: #aeb5bc;
+  font-family: var(--font-zenit-body), Arial, sans-serif;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.footer-contact span {
+  display: block;
+  color: #f5f6f7;
+  font-family: var(--font-zenit-display), Georgia, "Times New Roman", serif;
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: .01em;
+}
+
+.footer-copyright {
+  margin: 0;
+  color: #9ca3aa;
+  font-family: var(--font-zenit-display), Georgia, "Times New Roman", serif;
+  font-size: 15px;
+  font-style: italic;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  footer {
+    flex-wrap: wrap;
+  }
+
+  .footer-brand {
+    width: 100%;
+  }
+
+  .footer-contact {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 720px) {
+  footer {
+    padding: 36px 20px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 28px;
+  }
+
+  .footer-brand img {
+    width: 180px;
+  }
+
+  .footer-contact {
+    display: grid;
+    gap: 20px;
+  }
+
+  .footer-contact span {
+    font-size: 17px;
+  }
+
+  .footer-copyright {
+    font-size: 14px;
+    white-space: normal;
   }
 }

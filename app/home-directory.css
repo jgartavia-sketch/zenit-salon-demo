@@ -1,0 +1,182 @@
+/* =========================================================
+   ZÉNIT SALÓN — HOME DIRECTORY
+   Este archivo SOLO estiliza las 4 cards de "Todo Zénit".
+   Está pensado para cargarse después de globals.css.
+   ========================================================= */
+
+.home-directory {
+  background:
+    radial-gradient(
+      circle at 80% 0%,
+      rgba(174, 181, 189, 0.1),
+      transparent 36%
+    ),
+    #070707;
+}
+
+.directory-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.directory-grid > a {
+  position: relative;
+  overflow: hidden;
+  min-height: 300px;
+  padding: 30px 26px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(10, 31, 53, 0.11);
+  border-radius: 26px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.98),
+      rgba(241, 245, 249, 0.92)
+    );
+  box-shadow:
+    0 18px 45px rgba(20, 36, 55, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  color: #071426;
+  text-decoration: none;
+  transition:
+    transform 0.45s ease,
+    box-shadow 0.45s ease,
+    border-color 0.45s ease;
+}
+
+.directory-grid > a::before {
+  content: none !important;
+}
+
+.directory-grid > a::after {
+  content: "";
+  position: absolute;
+  z-index: 5;
+  top: -42%;
+  left: -70%;
+  width: 34%;
+  height: 190%;
+  pointer-events: none;
+  opacity: 0;
+  transform: rotate(20deg);
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.2),
+      rgba(255, 255, 255, 0.98),
+      rgba(255, 255, 255, 0.2),
+      transparent
+    );
+  filter: none;
+  transition:
+    left 1.7s cubic-bezier(0.2, 0.65, 0.25, 1),
+    opacity 0.35s ease;
+}
+
+.directory-grid > a:hover,
+.directory-grid > a:focus-visible {
+  transform: translateY(-7px);
+  border-color: rgba(21, 56, 93, 0.26);
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.98),
+      rgba(241, 245, 249, 0.92)
+    );
+  box-shadow:
+    0 28px 68px rgba(17, 38, 62, 0.14),
+    inset 0 1px 0 #ffffff;
+}
+
+.directory-grid > a:hover::after,
+.directory-grid > a:focus-visible::after {
+  left: 140%;
+  opacity: 0.72;
+}
+
+.directory-grid > a > span {
+  position: relative;
+  z-index: 2;
+  display: block;
+  color: #6e7c8c !important;
+  background: none !important;
+  background-image: none !important;
+  -webkit-background-clip: initial !important;
+  background-clip: initial !important;
+  -webkit-text-fill-color: #6e7c8c !important;
+  font-family: var(--font-zenit-body), Arial, sans-serif;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.directory-grid > a h3 {
+  position: relative;
+  z-index: 2;
+  margin: auto 0 12px;
+  color: #0a1c31;
+  font-family: var(--font-zenit-display), Georgia, serif;
+  font-size: 1.55rem;
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.directory-grid > a p {
+  position: relative;
+  z-index: 2;
+  margin: 0 0 24px;
+  color: #556779;
+  font-family: var(--font-zenit-body), Arial, sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+
+.directory-grid > a b {
+  position: relative;
+  z-index: 2;
+  display: block;
+  padding-top: 16px;
+  border-top: 1px solid rgba(12, 35, 59, 0.09);
+  color: #0d2d50;
+  font-family: var(--font-zenit-body), Arial, sans-serif;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 1050px) {
+  .directory-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .directory-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .directory-grid > a {
+    min-height: 240px;
+    padding: 26px 22px;
+  }
+
+  .directory-grid > a:hover,
+  .directory-grid > a:focus-visible {
+    transform: translateY(-3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .directory-grid > a,
+  .directory-grid > a::after {
+    transition: none;
+  }
+
+  .directory-grid > a::after {
+    display: none;
+  }
+}

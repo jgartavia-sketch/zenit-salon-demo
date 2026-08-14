@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Manrope } from "next/font/google";
 import "./globals.css";
+import "./home-directory.css";
 
 const cormorant = Cormorant_Garamond({
   variable: "--font-zenit-display",
@@ -19,7 +20,8 @@ const manrope = Manrope({
 
 export const metadata: Metadata = {
   title: "Zénit Salón | El punto máximo de tu belleza",
-  description: "Salón de belleza, barbería y estética en Dulce Nombre, Calle Sancho, San Carlos.",
+  description:
+    "Salón de belleza, barbería y estética en Dulce Nombre, Calle Sancho, San Carlos.",
   other: {
     "codex-preview": "development",
   },

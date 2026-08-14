@@ -271,11 +271,9 @@ export default function Home() {
         <div className="hero-grid" aria-hidden="true" />
         <div className="hero-glow" aria-hidden="true" />
         <div className="hero-copy">
-          <p className="eyebrow"><span /> Estilo · belleza · bienestar</p>
+         
           <h1><span>El punto máximo</span><em>de tu belleza.</em></h1>
-          <p className="hero-lead">
-            Una experiencia personalizada para renovar tu imagen con técnica, cuidado y elegancia.
-          </p>
+         
           <div className="hero-actions">
             <Link className="button" href="/servicios#solicitar-servicio">Reservar cita <b>→</b></Link>
             <Link className="button button-ghost" href="/tienda">Explorar tienda</Link>
@@ -294,13 +292,6 @@ export default function Home() {
             <img src="/logo-zenit.png" alt="Logo de Zénit Salón" />
           </div>
         </div>
-      </section>}
-
-      {isHome && <section className="metrics" aria-label="Ventajas del salón">
-          <div><strong>Zénit</strong><span>el punto máximo</span></div>
-        <div><strong>Atención</strong><span>clara y profesional</span></div>
-        <div><strong>Técnicos</strong><span>especializados</span></div>
-        <div><strong>Calidad</strong><span>garantizada</span></div>
       </section>}
 
       {isHome && <section className="section home-directory">
@@ -455,23 +446,23 @@ export default function Home() {
                   placeholder="••••••••"
                 />
                 <button
-                              type="button"
-                              className="password-toggle"
-                              onClick={() => setShowLoginPassword((visible) => !visible)}
-                              aria-label={showLoginPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-                              aria-pressed={showLoginPassword}
-                            >
-                              {showLoginPassword ? (
-                                <svg viewBox="0 0 24 24" aria-hidden="true">
-                                  <path d="M3 3l18 18M10.6 10.7a2 2 0 002.7 2.7M9.9 4.2A10.8 10.8 0 0112 4c5.5 0 9 5.1 9 5.1a15 15 0 01-3.1 3.6M6.2 6.2C4.2 7.5 3 9.1 3 9.1S6.5 15 12 15c1 0 2-.2 2.9-.5" />
-                                </svg>
-                              ) : (
-                                <svg viewBox="0 0 24 24" aria-hidden="true">
-                                  <path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" />
-                                  <circle cx="12" cy="12" r="2.5" />
-                                </svg>
-                              )}
-                            </button>
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowLoginPassword((visible) => !visible)}
+                  aria-label={showLoginPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                  aria-pressed={showLoginPassword}
+                >
+                  {showLoginPassword ? (
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M3 3l18 18M10.6 10.7a2 2 0 002.7 2.7M9.9 4.2A10.8 10.8 0 0112 4c5.5 0 9 5.1 9 5.1a15 15 0 01-3.1 3.6M6.2 6.2C4.2 7.5 3 9.1 3 9.1S6.5 15 12 15c1 0 2-.2 2.9-.5" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" />
+                      <circle cx="12" cy="12" r="2.5" />
+                    </svg>
+                  )}
+                </button>
               </div>
             </label>
             {authError && <p className="inline-error">{authError}</p>}
@@ -660,11 +651,21 @@ export default function Home() {
       </section>}
 
       <footer>
-        <div className="brand footer-brand"><img src="/logo-zenit.png" alt="" /><span><strong>Zénit</strong>Salón</span></div>
-        <div className="footer-contact" aria-label="Información de contacto">
-          <p><strong>Teléfono y WhatsApp</strong>+506 7124-6337</p>
-          <p><strong>Ubicación</strong>Dulce Nombre, Calle Sancho, San Carlos</p>
+        <div className="footer-brand">
+          <img src="/logo-zenit.png" alt="Zénit Salón" />
         </div>
+
+        <div className="footer-contact" aria-label="Información de contacto">
+          <p>
+            <strong>Teléfono y WhatsApp</strong>
+            <span>+506 7124-6337</span>
+          </p>
+          <p>
+            <strong>Ubicación</strong>
+            <span>Dulce Nombre, Calle Sancho, San Carlos</span>
+          </p>
+        </div>
+
         <p className="footer-copyright">© 2026 Zénit Salón</p>
       </footer>
 
