@@ -1,14 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import styles from "./servicios.module.css";
+
+type ServiceMode = "quote" | "reserve";
 
 type Service = {
   id: string;
   name: string;
-  description: string;
-  details: string[];
+  category: string;
+  mode: ServiceMode;
+  price?: number;
+  note?: string;
 };
 
 type ServiceCategory = {
@@ -21,130 +25,126 @@ type ServiceCategory = {
 
 const WHATSAPP_NUMBER = "50671246337";
 
+const sharedIncluded =
+  "Incluye lavado, secado y planchado al finalizar el servicio.";
+
 const serviceCategories: ServiceCategory[] = [
   {
     id: "cortes",
     name: "Cortes",
-    eyebrow: "Diseño y estilo",
+    eyebrow: "Precio fijo",
     description:
-      "Opciones pensadas para renovar, definir o mantener tu estilo con una atención personalizada.",
+      "Todos los cortes tienen un precio fijo de ₡5.000 e incluyen lavado, secado y planchado.",
     services: [
-      {
-        id: "corte-clasico",
-        name: "Corte clásico",
-        description:
-          "Un corte limpio y versátil, adaptado a la forma de tu rostro, textura y estilo personal.",
-        details: [
-          "Asesoría breve antes de iniciar",
-          "Definición y acabado del corte",
-          "Lavado de cabello incluido al finalizar",
-        ],
-      },
-      {
-        id: "corte-en-capas",
-        name: "Corte en capas",
-        description:
-          "Movimiento, ligereza y dimensión para quienes buscan transformar la caída natural del cabello.",
-        details: [
-          "Diseño según largo y volumen",
-          "Acabado adaptado al movimiento del cabello",
-          "Lavado de cabello incluido al finalizar",
-        ],
-      },
-      {
-        id: "corte-bob-lob",
-        name: "Bob / Lob",
-        description:
-          "Una línea elegante y moderna que puede adaptarse desde un bob definido hasta un lob más largo.",
-        details: [
-          "Definición de largo y estructura",
-          "Acabado personalizado",
-          "Lavado de cabello incluido al finalizar",
-        ],
-      },
-      {
-        id: "mantenimiento-flequillo",
-        name: "Flequillo y mantenimiento",
-        description:
-          "Ajustes precisos para mantener la forma, proporción y frescura de tu corte entre visitas.",
-        details: [
-          "Ajuste de flequillo o contorno",
-          "Corrección de forma cuando corresponda",
-          "Lavado de cabello incluido al finalizar",
-        ],
-      },
+      { id: "corte-recto", name: "Corte recto", category: "Cortes", mode: "reserve", price: 5000 },
+      { id: "corte-v", name: "Corte en V", category: "Cortes", mode: "reserve", price: 5000 },
+      { id: "corte-mariposa", name: "Corte mariposa", category: "Cortes", mode: "reserve", price: 5000 },
+      { id: "corte-capas", name: "Corte en capas", category: "Cortes", mode: "reserve", price: 5000 },
+      { id: "corte-pixie", name: "Corte pixie", category: "Cortes", mode: "reserve", price: 5000 },
+      { id: "corte-bob-chanel", name: "Corte bob o chanel", category: "Cortes", mode: "reserve", price: 5000 },
+      { id: "corte-clasico-hombre", name: "Corte clásico de hombre", category: "Cortes", mode: "reserve", price: 5000 },
+    ],
+  },
+  {
+    id: "tratamientos-capilares",
+    name: "Tratamientos capilares",
+    eyebrow: "Cotización personalizada",
+    description:
+      "Seleccioná uno o varios tratamientos y Zénit te cotizará según largo, cantidad de cabello y valoración.",
+    services: [
+      { id: "velo-brillo", name: "Velo de brillo", category: "Tratamientos capilares", mode: "quote" },
+      { id: "aminoacidos", name: "Aminoácidos", category: "Tratamientos capilares", mode: "quote" },
+      { id: "tratamiento-danos", name: "Tratamiento de daños", category: "Tratamientos capilares", mode: "quote" },
+      { id: "botox-alisante", name: "Botox alisante", category: "Tratamientos capilares", mode: "quote" },
+      { id: "botox-humectante", name: "Botox humectante", category: "Tratamientos capilares", mode: "quote" },
+      { id: "celulas-madres", name: "Células madres", category: "Tratamientos capilares", mode: "quote" },
+      { id: "keratina", name: "Keratina", category: "Tratamientos capilares", mode: "quote" },
+      { id: "nanoplastia", name: "Nanoplastia", category: "Tratamientos capilares", mode: "quote" },
+      { id: "liso-extremo", name: "Liso extremo", category: "Tratamientos capilares", mode: "quote" },
     ],
   },
   {
     id: "tintes",
     name: "Tintes",
-    eyebrow: "Color profesional",
+    eyebrow: "Cotización personalizada",
     description:
-      "Técnicas de color pensadas para acompañar tu estilo, desde mantenimiento hasta cambios de imagen.",
+      "Elegí una o varias técnicas de color para solicitar una cotización directamente por WhatsApp.",
+    services: [
+      { id: "tinte-fantasia", name: "Tinte fantasía", category: "Tintes", mode: "quote" },
+      { id: "tinte-global", name: "Tinte global", category: "Tintes", mode: "quote" },
+      { id: "cubrimiento-canas", name: "Cubrimiento de canas", category: "Tintes", mode: "quote" },
+      { id: "mechas-rayitos", name: "Diseño de mechas y rayitos", category: "Tintes", mode: "quote" },
+      { id: "balayage", name: "Balayage", category: "Tintes", mode: "quote" },
+      { id: "morena-iluminada", name: "Morena iluminada", category: "Tintes", mode: "quote" },
+    ],
+  },
+  {
+    id: "lavado-secado-planchado",
+    name: "Lavado, secado y planchado",
+    eyebrow: "Servicio completo",
+    description:
+      "También podés reservar lavado, secado y planchado como servicio independiente con tratamiento básico incluido.",
     services: [
       {
-        id: "tinte-completo",
-        name: "Tinte completo",
-        description:
-          "Aplicación de color en todo el cabello para renovar el tono, intensificarlo o realizar un cambio completo.",
-        details: [
-          "Valoración visual previa",
-          "Aplicación de color según objetivo",
-          "Lavado de cabello incluido al finalizar",
-        ],
-      },
-      {
-        id: "retoque-raiz",
-        name: "Retoque de raíz",
-        description:
-          "Mantenimiento del crecimiento para conservar un color uniforme y una apariencia cuidada.",
-        details: [
-          "Aplicación localizada en crecimiento",
-          "Integración con el tono existente",
-          "Lavado de cabello incluido al finalizar",
-        ],
-      },
-      {
-        id: "balayage",
-        name: "Balayage",
-        description:
-          "Iluminación de acabado natural y progresivo para aportar dimensión sin perder elegancia.",
-        details: [
-          "Valoración del color actual",
-          "Diseño de iluminación según resultado buscado",
-          "Lavado de cabello incluido al finalizar",
-        ],
-      },
-      {
-        id: "mechas-iluminaciones",
-        name: "Mechas / Iluminaciones",
-        description:
-          "Trabajo de luces y contraste para crear profundidad, brillo y dimensión en el cabello.",
-        details: [
-          "Selección de técnica según el resultado",
-          "Distribución personalizada de luces",
-          "Lavado de cabello incluido al finalizar",
-        ],
+        id: "lavado-secado-planchado-tratamiento",
+        name: "Lavado + secado + planchado + tratamiento básico",
+        category: "Lavado, secado y planchado",
+        mode: "reserve",
+        price: 10000,
+        note: "Tratamiento básico incluido.",
       },
     ],
   },
 ];
 
-function buildWhatsAppMessage(category: string, service: string) {
+const allServices = serviceCategories.flatMap((category) => category.services);
+
+function formatPrice(value: number) {
+  return `₡${value.toLocaleString("es-CR")}`;
+}
+
+function buildWhatsAppMessage(services: Service[]) {
+  const lines = services.map(
+    (service) => `• ${service.category}: ${service.name}`,
+  );
+
   return [
     "Hola, Zénit Salón.",
     "",
-    `Me interesa cotizar el servicio: ${service}`,
-    `Categoría: ${category}`,
+    "Quiero cotizar los siguientes servicios:",
+    ...lines,
     "",
-    "¿Me pueden brindar más información y ayudarme con la cotización?",
+    "¿Me pueden brindar información y ayudarme con la cotización?",
   ].join("\n");
 }
 
 export default function ServiciosPage() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>(
-    {},
+  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  const selectedServices = useMemo(
+    () => allServices.filter((service) => selectedIds.includes(service.id)),
+    [selectedIds],
+  );
+
+  const quoteServices = useMemo(
+    () => selectedServices.filter((service) => service.mode === "quote"),
+    [selectedServices],
+  );
+
+  const reserveServices = useMemo(
+    () => selectedServices.filter((service) => service.mode === "reserve"),
+    [selectedServices],
+  );
+
+  const reserveTotal = useMemo(
+    () =>
+      reserveServices.reduce(
+        (total, service) => total + (service.price || 0),
+        0,
+      ),
+    [reserveServices],
   );
 
   const toggleCategory = (categoryId: string) => {
@@ -154,14 +154,40 @@ export default function ServiciosPage() {
     }));
   };
 
-  const quoteService = (category: string, service: string) => {
-    const message = buildWhatsAppMessage(category, service);
+  const toggleService = (serviceId: string) => {
+    setSelectedIds((current) =>
+      current.includes(serviceId)
+        ? current.filter((id) => id !== serviceId)
+        : [...current, serviceId],
+    );
+  };
+
+  const clearSelection = () => {
+    setSelectedIds([]);
+  };
+
+  const quoteSelected = () => {
+    if (!quoteServices.length) return;
+
+    const message = buildWhatsAppMessage(quoteServices);
 
     window.open(
       `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`,
       "_blank",
       "noopener,noreferrer",
     );
+  };
+
+  const reserveSelected = () => {
+    if (!reserveServices.length) return;
+
+    const params = new URLSearchParams();
+    params.set(
+      "servicios",
+      reserveServices.map((service) => service.id).join(","),
+    );
+
+    window.location.href = `/reservar?${params.toString()}`;
   };
 
   return (
@@ -192,34 +218,20 @@ export default function ServiciosPage() {
           className={menuOpen ? "nav-open" : ""}
           aria-label="Navegación principal"
         >
-          <Link href="/" onClick={() => setMenuOpen(false)}>
-            Inicio
-          </Link>
-          <Link href="/registro" onClick={() => setMenuOpen(false)}>
-            Registro
-          </Link>
-          <Link href="/tienda" onClick={() => setMenuOpen(false)}>
-            Tienda
-          </Link>
-          <Link
-            className="active"
-            href="/servicios"
-            onClick={() => setMenuOpen(false)}
-          >
+          <Link href="/" onClick={() => setMenuOpen(false)}>Inicio</Link>
+          <Link href="/registro" onClick={() => setMenuOpen(false)}>Registro</Link>
+          <Link href="/tienda" onClick={() => setMenuOpen(false)}>Tienda</Link>
+          <Link className="active" href="/servicios" onClick={() => setMenuOpen(false)}>
             Servicios
           </Link>
-          <Link href="/nosotros" onClick={() => setMenuOpen(false)}>
-            Nosotros
-          </Link>
+          <Link href="/nosotros" onClick={() => setMenuOpen(false)}>Nosotros</Link>
         </nav>
 
         <div className="header-actions">
           <a className="button button-small" href="#catalogo">
-            Cotizar
+            Elegir servicios
           </a>
-          <Link className="account-link" href="/login">
-            Ingresar
-          </Link>
+          <Link className="account-link" href="/login">Ingresar</Link>
         </div>
       </header>
 
@@ -245,18 +257,9 @@ export default function ServiciosPage() {
           </p>
 
           <div className={styles.heroHighlights}>
-            <span>
-              <b>✦</b>
-              Atención personalizada
-            </span>
-            <span>
-              <b>✦</b>
-              Entorno tranquilo
-            </span>
-            <span>
-              <b>✦</b>
-              Lavado incluido
-            </span>
+            <span><b>✦</b> Atención personalizada</span>
+            <span><b>✦</b> Entorno tranquilo</span>
+            <span><b>✦</b> Lavado, secado y planchado incluidos</span>
           </div>
 
           <a className={styles.heroButton} href="#catalogo">
@@ -280,21 +283,32 @@ export default function ServiciosPage() {
           <div>
             <p className={styles.eyebrow}>
               <span />
-              Elegí tu servicio
+              Elegí tus servicios
             </p>
-            <h2>Cortes y color, a tu manera.</h2>
+            <h2>Seleccioná uno o varios.</h2>
           </div>
 
           <p>
-            Explorá las opciones disponibles y cotizá directamente con Zénit
-            por WhatsApp. Por ahora no mostramos precios porque cada caso puede
-            requerir una valoración diferente.
+            Podés combinar varios servicios en una misma selección. Los de
+            precio fijo se preparan para reserva; tratamientos y tintes se
+            envían juntos para cotización por WhatsApp.
           </p>
+        </div>
+
+        <div className={styles.includedBanner}>
+          <span aria-hidden="true">✓</span>
+          <div>
+            <strong>Incluido en cortes, tratamientos y tintes</strong>
+            <p>{sharedIncluded}</p>
+          </div>
         </div>
 
         <div className={styles.catalog}>
           {serviceCategories.map((category) => {
             const isOpen = Boolean(openCategories[category.id]);
+            const selectedInCategory = category.services.filter((service) =>
+              selectedIds.includes(service.id),
+            ).length;
 
             return (
               <section
@@ -311,7 +325,6 @@ export default function ServiciosPage() {
                 >
                   <div className={styles.categoryHeading}>
                     <span>✦</span>
-
                     <div>
                       <p>{category.eyebrow}</p>
                       <h2>{category.name}</h2>
@@ -320,60 +333,56 @@ export default function ServiciosPage() {
                   </div>
 
                   <div className={styles.categoryMeta}>
-                    <span>
-                      {isOpen ? "Ocultar servicios" : "Ver servicios"}
-                    </span>
+                    {selectedInCategory > 0 && (
+                      <span className={styles.selectedBadge}>
+                        {selectedInCategory} seleccionado{selectedInCategory > 1 ? "s" : ""}
+                      </span>
+                    )}
+                    <span>{isOpen ? "Ocultar" : "Ver servicios"}</span>
                     <b aria-hidden="true">+</b>
                   </div>
                 </button>
 
-                <div
-                  className={styles.categoryContent}
-                  aria-hidden={!isOpen}
-                >
-                  <div className={styles.serviceGrid}>
-                    {category.services.map((service) => (
-                      <article className={styles.serviceCard} key={service.id}>
-                        <div className={styles.cardTop}>
-                          <small>{category.name}</small>
-                          <span aria-hidden="true">✦</span>
-                        </div>
+                <div className={styles.categoryContent} aria-hidden={!isOpen}>
+                  <div className={styles.checklist}>
+                    {category.services.map((service) => {
+                      const selected = selectedIds.includes(service.id);
 
-                        <h3>{service.name}</h3>
-                        <p>{service.description}</p>
-
-                        <details className={styles.serviceDetails}>
-                          <summary>
-                            <span>Ver qué incluye</span>
-                            <b aria-hidden="true">+</b>
-                          </summary>
-
-                          <div>
-                            <ul>
-                              {service.details.map((detail) => (
-                                <li key={detail}>{detail}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        </details>
-
-                        <div className={styles.washIncluded}>
-                          <span aria-hidden="true">✓</span>
-                          Incluye lavado de cabello al finalizar
-                        </div>
-
-                        <button
-                          type="button"
-                          className={styles.quoteButton}
-                          onClick={() =>
-                            quoteService(category.name, service.name)
-                          }
+                      return (
+                        <label
+                          className={`${styles.serviceRow} ${
+                            selected ? styles.serviceRowSelected : ""
+                          }`}
+                          key={service.id}
                         >
-                          Cotizar por WhatsApp
-                          <span aria-hidden="true">→</span>
-                        </button>
-                      </article>
-                    ))}
+                          <input
+                            type="checkbox"
+                            checked={selected}
+                            onChange={() => toggleService(service.id)}
+                          />
+
+                          <span className={styles.customCheck} aria-hidden="true">
+                            {selected ? "✓" : ""}
+                          </span>
+
+                          <span className={styles.serviceInfo}>
+                            <strong>{service.name}</strong>
+                            <small>
+                              {service.mode === "reserve"
+                                ? "Precio fijo · Reserva"
+                                : "Cotización personalizada"}
+                            </small>
+                            {service.note && <em>{service.note}</em>}
+                          </span>
+
+                          <span className={styles.servicePrice}>
+                            {service.price
+                              ? formatPrice(service.price)
+                              : "Cotizar"}
+                          </span>
+                        </label>
+                      );
+                    })}
                   </div>
                 </div>
               </section>
@@ -381,15 +390,99 @@ export default function ServiciosPage() {
           })}
         </div>
 
+        <section className={styles.selectionPanel} aria-live="polite">
+          <div className={styles.selectionHeading}>
+            <div>
+              <small>Tu selección</small>
+              <h3>
+                {selectedServices.length
+                  ? `${selectedServices.length} servicio${selectedServices.length > 1 ? "s" : ""}`
+                  : "Todavía no elegiste servicios"}
+              </h3>
+            </div>
+
+            {selectedServices.length > 0 && (
+              <button type="button" onClick={clearSelection}>
+                Limpiar selección
+              </button>
+            )}
+          </div>
+
+          {selectedServices.length > 0 ? (
+            <>
+              <div className={styles.selectedList}>
+                {selectedServices.map((service) => (
+                  <button
+                    type="button"
+                    key={service.id}
+                    onClick={() => toggleService(service.id)}
+                    className={styles.selectedChip}
+                    title={`Quitar ${service.name}`}
+                  >
+                    <span>{service.name}</span>
+                    <b>×</b>
+                  </button>
+                ))}
+              </div>
+
+              <div className={styles.actionGrid}>
+                <div className={styles.actionCard}>
+                  <small>Cotización</small>
+                  <strong>
+                    {quoteServices.length} servicio{quoteServices.length !== 1 ? "s" : ""}
+                  </strong>
+                  <p>
+                    Tratamientos y tintes se envían juntos en un solo mensaje.
+                  </p>
+                  <button
+                    type="button"
+                    className={styles.whatsappButton}
+                    onClick={quoteSelected}
+                    disabled={!quoteServices.length}
+                  >
+                    Cotizar selección por WhatsApp
+                    <span>→</span>
+                  </button>
+                </div>
+
+                <div className={styles.actionCard}>
+                  <small>Reserva</small>
+                  <strong>
+                    {reserveServices.length} servicio{reserveServices.length !== 1 ? "s" : ""}
+                  </strong>
+                  <p>
+                    Total de servicios con precio fijo:{" "}
+                    <b>{formatPrice(reserveTotal)}</b>
+                  </p>
+                  <button
+                    type="button"
+                    className={styles.reserveButton}
+                    onClick={reserveSelected}
+                    disabled={!reserveServices.length}
+                  >
+                    Reservar selección
+                    <span>→</span>
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <p className={styles.emptySelection}>
+              Marcá los servicios que te interesan. Podés seleccionar varios de
+              diferentes categorías.
+            </p>
+          )}
+        </section>
+
         <div className={styles.quoteNote}>
           <span aria-hidden="true">✦</span>
           <div>
-            <small>Cotización personalizada</small>
-            <strong>Elegí primero. Coordinamos los detalles después.</strong>
+            <small>Dos caminos, una sola selección</small>
+            <strong>Cotizá lo variable. Reservá lo que ya tiene precio.</strong>
             <p>
-              Al tocar “Cotizar por WhatsApp” enviaremos el nombre del servicio
-              al WhatsApp oficial de Zénit para continuar la conversación.
-              La reserva de citas será una sección independiente.
+              Si elegís servicios de ambos tipos, podés cotizar tratamientos y
+              tintes por WhatsApp y luego reservar los servicios de precio fijo
+              sin perder tu selección.
             </p>
           </div>
         </div>
