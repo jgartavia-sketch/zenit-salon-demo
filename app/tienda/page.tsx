@@ -117,9 +117,7 @@ function formatPrice(value: number) {
 export default function TiendaPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
-  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({
-    Shampoo: true,
-  });
+  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
   const [selectedQuantities, setSelectedQuantities] = useState<Record<string, number>>(
     () => Object.fromEntries(products.map((product) => [product.id, 1])),
   );
@@ -401,8 +399,8 @@ export default function TiendaPage() {
                     </div>
 
                     <div className={styles.categoryMeta}>
-                      <span>
-                        {categoryProducts.length} {categoryProducts.length === 1 ? "producto" : "productos"}
+                      <span className={styles.viewProductsLabel}>
+                        {isCategoryOpen ? "Ocultar productos" : "Ver productos"}
                       </span>
                       <b aria-hidden="true">+</b>
                     </div>

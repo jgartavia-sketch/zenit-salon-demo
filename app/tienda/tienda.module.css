@@ -124,6 +124,16 @@
   white-space: nowrap;
 }
 
+.viewProductsLabel {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 11px;
+  border: 1px solid rgba(13,45,80,.10);
+  border-radius: 999px;
+  background: rgba(255,255,255,.72);
+}
+
 .categoryMeta b {
   display: grid;
   width: 34px;
@@ -776,7 +786,7 @@
   }
 
   .categoryMeta > span {
-    display: none;
+    display: inline-flex;
   }
 
   .productGrid {
@@ -927,6 +937,13 @@
 @media (max-width: 420px) {
   .categoryToggle {
     padding-inline: 12px;
+  }
+
+  .viewProductsLabel {
+    min-height: 26px;
+    padding-inline: 8px;
+    font-size: 7px;
+    letter-spacing: .05em;
   }
 
   .categoryHeading h2 {
