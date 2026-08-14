@@ -15,9 +15,9 @@
   gap: clamp(40px, 7vw, 110px);
   color: #fff;
   background:
-    radial-gradient(circle at 78% 20%, rgba(255,255,255,.16), transparent 24%),
-    radial-gradient(circle at 12% 78%, rgba(39, 77, 119, .34), transparent 32%),
-    linear-gradient(125deg, #050b13 0%, #0a1726 43%, #102a46 100%);
+    linear-gradient(90deg, rgba(3, 9, 16, .88) 0%, rgba(5, 14, 24, .72) 42%, rgba(5, 14, 24, .30) 72%, rgba(5, 14, 24, .18) 100%),
+    linear-gradient(180deg, rgba(3, 8, 14, .14) 0%, rgba(3, 8, 14, .22) 100%),
+    url("/images/hero-servicios-zenit.jpg") center center / cover no-repeat;
 }
 
 .hero::after {
