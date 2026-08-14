@@ -382,7 +382,15 @@ export default function TiendaPage() {
                             <small>{product.brand}</small>
                             <h3>{product.name}</h3>
                             <strong>{formatPrice(product.price)}</strong>
-                            <p>{product.description}</p>
+                            <details className={styles.productDescription}>
+                              <summary>
+                                <span>Ver descripción</span>
+                                <b aria-hidden="true">+</b>
+                              </summary>
+                              <div>
+                                <p>{product.description}</p>
+                              </div>
+                            </details>
 
                             <div className={styles.purchaseRow}>
                               <div

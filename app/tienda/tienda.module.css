@@ -213,12 +213,63 @@
   -webkit-text-fill-color: #0d2d50 !important;
 }
 
-.productInfo p {
-  margin: 12px 0 16px;
+.productDescription {
+  margin: 13px 0 16px;
+  border-top: 1px solid rgba(12, 35, 59, .09);
+}
+
+.productDescription summary {
+  list-style: none;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  cursor: pointer;
+  color: #42566d;
+  font-family: var(--font-zenit-body), Arial, sans-serif;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.productDescription summary::-webkit-details-marker {
+  display: none;
+}
+
+.productDescription summary b {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1px solid rgba(14, 48, 83, .16);
+  border-radius: 50%;
+  color: #123b65;
+  background: rgba(255,255,255,.6);
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1;
+  transition: transform .28s ease;
+}
+
+.productDescription[open] summary b {
+  transform: rotate(45deg);
+}
+
+.productDescription > div {
+  animation: descriptionReveal .28s ease;
+}
+
+.productDescription p {
+  margin: 0;
+  padding: 0 0 14px;
   color: #556779 !important;
   font-family: var(--font-zenit-body), Arial, sans-serif;
   font-size: 12px;
-  line-height: 1.55;
+  line-height: 1.6;
   -webkit-text-fill-color: #556779 !important;
 }
 
@@ -543,6 +594,17 @@
   text-align: center;
 }
 
+@keyframes descriptionReveal {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Desktop grande */
 @media (min-width: 1440px) {
   .productGrid {
@@ -679,7 +741,7 @@
     font-size: 16px;
   }
 
-  .productInfo p {
+  .productDescription p {
     font-size: 11.5px;
   }
 
@@ -775,8 +837,13 @@
   .productCard,
   .productCard::after,
   .imageStage img,
-  .addButton {
+  .addButton,
+  .productDescription summary b {
     transition: none;
+  }
+
+  .productDescription > div {
+    animation: none;
   }
 
   .productCard::after {
