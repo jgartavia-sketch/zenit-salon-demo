@@ -455,9 +455,14 @@
 }
 
 .emptyCart p {
-  margin: 0;
+  margin: 0 0 18px;
   color: #667687;
   font-size: 12px;
+}
+
+.emptyCart .continueShoppingButton {
+  width: auto;
+  min-width: 180px;
 }
 
 .cartList {
@@ -584,6 +589,37 @@
 
 .whatsappCheckout:hover {
   background: #173e68;
+}
+
+.continueShoppingButton {
+  width: 100%;
+  min-height: 46px;
+  margin-top: 10px;
+  padding: 0 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(13,45,80,.18);
+  border-radius: 999px;
+  color: #0d2d50;
+  background: #ffffff;
+  font-family: var(--font-zenit-body), Arial, sans-serif;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  transition:
+    transform .25s ease,
+    background .25s ease,
+    border-color .25s ease,
+    box-shadow .25s ease;
+}
+
+.continueShoppingButton:hover {
+  transform: translateY(-2px);
+  border-color: rgba(13,45,80,.34);
+  background: #f2f5f8;
+  box-shadow: 0 10px 24px rgba(13,45,80,.08);
 }
 
 .checkoutNote {
@@ -802,6 +838,11 @@
 
   .addButton {
     min-height: 40px;
+    font-size: 8px;
+  }
+
+  .continueShoppingButton {
+    min-height: 44px;
     font-size: 8px;
   }
 

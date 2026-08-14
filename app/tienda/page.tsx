@@ -265,6 +265,13 @@ export default function TiendaPage() {
               <span>✦</span>
               <h3>Tu carrito está vacío</h3>
               <p>Agregá productos para preparar el pedido.</p>
+              <button
+                type="button"
+                className={styles.continueShoppingButton}
+                onClick={() => setCartOpen(false)}
+              >
+                Seguir comprando
+              </button>
             </div>
           ) : (
             <>
@@ -324,6 +331,14 @@ export default function TiendaPage() {
               >
                 Enviar pedido por WhatsApp
                 <span aria-hidden="true">→</span>
+              </button>
+
+              <button
+                type="button"
+                className={styles.continueShoppingButton}
+                onClick={() => setCartOpen(false)}
+              >
+                Seguir comprando
               </button>
 
               <p className={styles.checkoutNote}>
