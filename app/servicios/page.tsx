@@ -224,6 +224,7 @@ export default function ServiciosPage() {
           <Link className="active" href="/servicios" onClick={() => setMenuOpen(false)}>
             Servicios
           </Link>
+          <Link href="/reservar" onClick={() => setMenuOpen(false)}>Reservar</Link>
           <Link href="/nosotros" onClick={() => setMenuOpen(false)}>Nosotros</Link>
         </nav>
 

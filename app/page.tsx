@@ -57,6 +57,7 @@ export default function Home() {
   const isServices = pathname === "/servicios";
   const isShop = pathname === "/tienda";
   const isAbout = pathname === "/nosotros" || pathname === "/contacto";
+  const isReserve = pathname === "/reservar";
   const isLogin = pathname === "/login";
   const isAccount = pathname === "/mi-cuenta";
   const [menuOpen, setMenuOpen] = useState(false);
@@ -258,11 +259,12 @@ export default function Home() {
           <Link className={isRegistration ? "active" : ""} href="/registro" onClick={() => setMenuOpen(false)}>Registro</Link>
           <Link className={isShop ? "active" : ""} href="/tienda" onClick={() => setMenuOpen(false)}>Tienda</Link>
           <Link className={isServices ? "active" : ""} href="/servicios" onClick={() => setMenuOpen(false)}>Servicios</Link>
+          <Link className={isReserve ? "active" : ""} href="/reservar" onClick={() => setMenuOpen(false)}>Reservar</Link>
           <Link className={isAbout ? "active" : ""} href="/nosotros" onClick={() => setMenuOpen(false)}>Nosotros</Link>
         </nav>
 
         <div className="header-actions">
-          <Link className="button button-small" href="/servicios#solicitar-servicio">Reservar</Link>
+          <Link className="button button-small" href="/reservar">Reservar</Link>
           <Link className="account-link" href={profile ? "/mi-cuenta" : "/login"}>{profile ? "Mi cuenta" : "Ingresar"}</Link>
         </div>
       </header>
@@ -275,7 +277,7 @@ export default function Home() {
           <h1><span>El punto máximo</span><em>de tu belleza.</em></h1>
          
           <div className="hero-actions">
-            <Link className="button" href="/servicios#solicitar-servicio">Reservar cita <b>→</b></Link>
+            <Link className="button" href="/reservar">Reservar cita <b>→</b></Link>
             <Link className="button button-ghost" href="/tienda">Explorar tienda</Link>
           </div>
           <div className="trust-row">

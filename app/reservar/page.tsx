@@ -11,57 +11,46 @@ type ReservableService = {
   category: string;
 };
 
+type QuotedService = {
+  id: string;
+  name: string;
+  category: string;
+};
+
 const WHATSAPP_NUMBER = "50671246337";
 
 const reservableServices: ReservableService[] = [
-  {
-    id: "corte-recto",
-    name: "Corte recto",
-    price: 5000,
-    category: "Cortes",
-  },
-  {
-    id: "corte-v",
-    name: "Corte en V",
-    price: 5000,
-    category: "Cortes",
-  },
-  {
-    id: "corte-mariposa",
-    name: "Corte mariposa",
-    price: 5000,
-    category: "Cortes",
-  },
-  {
-    id: "corte-capas",
-    name: "Corte en capas",
-    price: 5000,
-    category: "Cortes",
-  },
-  {
-    id: "corte-pixie",
-    name: "Corte pixie",
-    price: 5000,
-    category: "Cortes",
-  },
-  {
-    id: "corte-bob-chanel",
-    name: "Corte bob o chanel",
-    price: 5000,
-    category: "Cortes",
-  },
-  {
-    id: "corte-clasico-hombre",
-    name: "Corte clásico de hombre",
-    price: 5000,
-    category: "Cortes",
-  },
+  { id: "corte-recto", name: "Corte recto", price: 5000, category: "Cortes" },
+  { id: "corte-v", name: "Corte en V", price: 5000, category: "Cortes" },
+  { id: "corte-mariposa", name: "Corte mariposa", price: 5000, category: "Cortes" },
+  { id: "corte-capas", name: "Corte en capas", price: 5000, category: "Cortes" },
+  { id: "corte-pixie", name: "Corte pixie", price: 5000, category: "Cortes" },
+  { id: "corte-bob-chanel", name: "Corte bob o chanel", price: 5000, category: "Cortes" },
+  { id: "corte-clasico-hombre", name: "Corte clásico de hombre", price: 5000, category: "Cortes" },
   {
     id: "lavado-secado-planchado-tratamiento",
     name: "Lavado + secado + planchado + tratamiento básico",
     price: 10000,
     category: "Servicio completo",
   },
+];
+
+const quotedServices: QuotedService[] = [
+  { id: "velo-brillo", name: "Velo de brillo", category: "Tratamientos capilares" },
+  { id: "aminoacidos", name: "Aminoácidos", category: "Tratamientos capilares" },
+  { id: "tratamiento-danos", name: "Tratamiento de daños", category: "Tratamientos capilares" },
+  { id: "botox-alisante", name: "Botox alisante", category: "Tratamientos capilares" },
+  { id: "botox-humectante", name: "Botox humectante", category: "Tratamientos capilares" },
+  { id: "celulas-madres", name: "Células madres", category: "Tratamientos capilares" },
+  { id: "keratina", name: "Keratina", category: "Tratamientos capilares" },
+  { id: "nanoplastia", name: "Nanoplastia", category: "Tratamientos capilares" },
+  { id: "liso-extremo", name: "Liso extremo", category: "Tratamientos capilares" },
+  { id: "tinte-fantasia", name: "Tinte fantasía", category: "Tintes" },
+  { id: "tinte-global", name: "Tinte global", category: "Tintes" },
+  { id: "cubrimiento-canas", name: "Cubrimiento de canas", category: "Tintes" },
+  { id: "mechas-rayitos", name: "Diseño de mechas y rayitos", category: "Tintes" },
+  { id: "balayage", name: "Balayage", category: "Tintes" },
+  { id: "morena-iluminada", name: "Morena iluminada", category: "Tintes" },
 ];
 
 function formatPrice(value: number) {
@@ -78,6 +67,8 @@ function todayISO() {
 export default function ReservarPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [alreadyQuoted, setAlreadyQuoted] = useState(false);
+  const [selectedQuotedIds, setSelectedQuotedIds] = useState<string[]>([]);
   const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
@@ -94,16 +85,22 @@ export default function ReservarPage() {
   }, []);
 
   const selectedServices = useMemo(
-    () =>
-      reservableServices.filter((service) => selectedIds.includes(service.id)),
+    () => reservableServices.filter((service) => selectedIds.includes(service.id)),
     [selectedIds],
   );
 
+  const selectedQuotedServices = useMemo(
+    () => quotedServices.filter((service) => selectedQuotedIds.includes(service.id)),
+    [selectedQuotedIds],
+  );
+
   const total = useMemo(
-    () =>
-      selectedServices.reduce((sum, service) => sum + service.price, 0),
+    () => selectedServices.reduce((sum, service) => sum + service.price, 0),
     [selectedServices],
   );
+
+  const hasAnyService =
+    selectedServices.length > 0 || selectedQuotedServices.length > 0;
 
   const toggleService = (serviceId: string) => {
     setSelectedIds((current) =>
@@ -113,10 +110,26 @@ export default function ReservarPage() {
     );
   };
 
+  const toggleQuotedService = (serviceId: string) => {
+    setSelectedQuotedIds((current) =>
+      current.includes(serviceId)
+        ? current.filter((id) => id !== serviceId)
+        : [...current, serviceId],
+    );
+  };
+
+  const handleQuotedChange = (checked: boolean) => {
+    setAlreadyQuoted(checked);
+
+    if (!checked) {
+      setSelectedQuotedIds([]);
+    }
+  };
+
   const submitReservation = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!selectedServices.length) return;
+    if (!hasAnyService) return;
 
     const form = new FormData(event.currentTarget);
 
@@ -126,8 +139,12 @@ export default function ReservarPage() {
     const time = String(form.get("time") || "").trim();
     const notes = String(form.get("notes") || "").trim();
 
-    const serviceLines = selectedServices.map(
+    const fixedLines = selectedServices.map(
       (service) => `• ${service.name} — ${formatPrice(service.price)}`,
+    );
+
+    const quotedLines = selectedQuotedServices.map(
+      (service) => `• ${service.category}: ${service.name}`,
     );
 
     const message = [
@@ -140,12 +157,17 @@ export default function ReservarPage() {
       `Fecha preferida: ${date}`,
       `Hora preferida: ${time}`,
       "",
-      "Servicios:",
-      ...serviceLines,
+      selectedServices.length ? "Servicios con precio fijo:" : "",
+      ...fixedLines,
+      selectedServices.length ? `Total precio fijo: ${formatPrice(total)}` : "",
+      selectedQuotedServices.length ? "" : "",
+      selectedQuotedServices.length ? "Servicios cotizados previamente por WhatsApp:" : "",
+      ...quotedLines,
+      selectedQuotedServices.length
+        ? "Estos servicios ya fueron cotizados previamente con Zénit."
+        : "",
       "",
-      `Total de servicios: ${formatPrice(total)}`,
       "Incluye lavado, secado y planchado cuando corresponda.",
-      "",
       notes ? `Notas: ${notes}` : "",
       "",
       "Entiendo que la fecha y hora quedan sujetas a confirmación de Zénit.",
@@ -190,21 +212,14 @@ export default function ReservarPage() {
           className={menuOpen ? "nav-open" : ""}
           aria-label="Navegación principal"
         >
-          <Link href="/" onClick={() => setMenuOpen(false)}>
-            Inicio
+          <Link href="/" onClick={() => setMenuOpen(false)}>Inicio</Link>
+          <Link href="/registro" onClick={() => setMenuOpen(false)}>Registro</Link>
+          <Link href="/tienda" onClick={() => setMenuOpen(false)}>Tienda</Link>
+          <Link href="/servicios" onClick={() => setMenuOpen(false)}>Servicios</Link>
+          <Link className="active" href="/reservar" onClick={() => setMenuOpen(false)}>
+            Reservar
           </Link>
-          <Link href="/registro" onClick={() => setMenuOpen(false)}>
-            Registro
-          </Link>
-          <Link href="/tienda" onClick={() => setMenuOpen(false)}>
-            Tienda
-          </Link>
-          <Link href="/servicios" onClick={() => setMenuOpen(false)}>
-            Servicios
-          </Link>
-          <Link href="/nosotros" onClick={() => setMenuOpen(false)}>
-            Nosotros
-          </Link>
+          <Link href="/nosotros" onClick={() => setMenuOpen(false)}>Nosotros</Link>
         </nav>
 
         <div className="header-actions">
@@ -233,30 +248,23 @@ export default function ReservarPage() {
           </h1>
 
           <p>
-            Elegí los servicios con precio fijo, indicá cuándo preferís venir y
-            enviá tu solicitud. Zénit confirmará disponibilidad directamente
-            por WhatsApp.
+            Reservá servicios de precio fijo o agendá los tintes y tratamientos
+            que ya cotizaste previamente por WhatsApp.
           </p>
 
           <div className={styles.heroTrust}>
-            <span>
-              <b>✓</b> Selección múltiple
-            </span>
-            <span>
-              <b>✓</b> Total visible
-            </span>
-            <span>
-              <b>✓</b> Confirmación por WhatsApp
-            </span>
+            <span><b>✓</b> Selección múltiple</span>
+            <span><b>✓</b> Cotizaciones previas</span>
+            <span><b>✓</b> Confirmación por WhatsApp</span>
           </div>
         </div>
 
         <aside className={styles.heroCard}>
           <small>Experiencia Zénit</small>
-          <strong>Reservar también debe sentirse fácil.</strong>
+          <strong>De la cotización a tu cita, sin vueltas.</strong>
           <p>
-            Sin llamadas innecesarias, sin formularios eternos. Elegís,
-            proponés fecha y Zénit confirma contigo.
+            Si ya coordinaste un tinte o tratamiento por WhatsApp, seleccioná
+            ese servicio aquí y proponé tu fecha de visita.
           </p>
         </aside>
       </section>
@@ -272,9 +280,8 @@ export default function ReservarPage() {
           </div>
 
           <p>
-            Podés reservar varios servicios de precio fijo en una misma cita.
-            Si buscás tintes o tratamientos capilares, primero cotizalos desde
-            la sección de Servicios.
+            Podés combinar varios servicios de precio fijo y también agregar
+            tintes o tratamientos que ya hayan sido cotizados previamente.
           </p>
         </div>
 
@@ -324,9 +331,7 @@ export default function ReservarPage() {
 
                           <span className={styles.serviceName}>
                             <strong>{service.name}</strong>
-                            <small>
-                              Incluye lavado, secado y planchado
-                            </small>
+                            <small>Incluye lavado, secado y planchado</small>
                           </span>
 
                           <b>{formatPrice(service.price)}</b>
@@ -346,9 +351,7 @@ export default function ReservarPage() {
                 </div>
 
                 {reservableServices
-                  .filter(
-                    (service) => service.category === "Servicio completo",
-                  )
+                  .filter((service) => service.category === "Servicio completo")
                   .map((service) => {
                     const selected = selectedIds.includes(service.id);
 
@@ -379,16 +382,104 @@ export default function ReservarPage() {
                     );
                   })}
               </div>
+
+              <div className={styles.quotedBlock}>
+                <label className={styles.quotedToggle}>
+                  <input
+                    type="checkbox"
+                    checked={alreadyQuoted}
+                    onChange={(event) => handleQuotedChange(event.target.checked)}
+                  />
+
+                  <span className={styles.quotedCheck}>
+                    {alreadyQuoted ? "✓" : ""}
+                  </span>
+
+                  <span>
+                    <strong>Ya realicé mi cotización por WhatsApp</strong>
+                    <small>
+                      Activá esta opción para reservar tintes o tratamientos que
+                      Zénit ya te cotizó.
+                    </small>
+                  </span>
+                </label>
+
+                {alreadyQuoted && (
+                  <div className={styles.quotedServices}>
+                    <div className={styles.quotedIntro}>
+                      <small>Cotización previa</small>
+                      <h4>¿Qué servicio ya cotizaste?</h4>
+                      <p>Podés seleccionar uno o varios.</p>
+                    </div>
+
+                    <div className={styles.quotedCategory}>
+                      <strong>Tratamientos capilares</strong>
+                      <div className={styles.quotedGrid}>
+                        {quotedServices
+                          .filter((service) => service.category === "Tratamientos capilares")
+                          .map((service) => {
+                            const selected = selectedQuotedIds.includes(service.id);
+
+                            return (
+                              <label
+                                className={`${styles.quotedServiceRow} ${
+                                  selected ? styles.quotedServiceSelected : ""
+                                }`}
+                                key={service.id}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={selected}
+                                  onChange={() => toggleQuotedService(service.id)}
+                                />
+                                <span>{selected ? "✓" : ""}</span>
+                                <strong>{service.name}</strong>
+                              </label>
+                            );
+                          })}
+                      </div>
+                    </div>
+
+                    <div className={styles.quotedCategory}>
+                      <strong>Tintes</strong>
+                      <div className={styles.quotedGrid}>
+                        {quotedServices
+                          .filter((service) => service.category === "Tintes")
+                          .map((service) => {
+                            const selected = selectedQuotedIds.includes(service.id);
+
+                            return (
+                              <label
+                                className={`${styles.quotedServiceRow} ${
+                                  selected ? styles.quotedServiceSelected : ""
+                                }`}
+                                key={service.id}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={selected}
+                                  onChange={() => toggleQuotedService(service.id)}
+                                />
+                                <span>{selected ? "✓" : ""}</span>
+                                <strong>{service.name}</strong>
+                              </label>
+                            );
+                          })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className={styles.totalBar}>
               <div>
                 <small>Servicios seleccionados</small>
-                <strong>{selectedServices.length}</strong>
+                <strong>{selectedServices.length + selectedQuotedServices.length}</strong>
               </div>
 
               <div>
-                <small>Total estimado</small>
+                <small>Total con precio fijo</small>
                 <strong>{formatPrice(total)}</strong>
               </div>
             </div>
@@ -429,12 +520,7 @@ export default function ReservarPage() {
               <div className={styles.formRow}>
                 <label>
                   Fecha preferida
-                  <input
-                    name="date"
-                    type="date"
-                    min={todayISO()}
-                    required
-                  />
+                  <input name="date" type="date" min={todayISO()} required />
                 </label>
 
                 <label>
@@ -454,21 +540,42 @@ export default function ReservarPage() {
               <div className={styles.summary}>
                 <small>Tu reserva</small>
 
-                {selectedServices.length ? (
-                  <div className={styles.summaryList}>
-                    {selectedServices.map((service) => (
-                      <div key={service.id}>
-                        <span>{service.name}</span>
-                        <b>{formatPrice(service.price)}</b>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
+                {!hasAnyService ? (
                   <p>Elegí al menos un servicio para continuar.</p>
+                ) : (
+                  <>
+                    {selectedServices.length > 0 && (
+                      <div className={styles.summarySection}>
+                        <strong>Precio fijo</strong>
+                        <div className={styles.summaryList}>
+                          {selectedServices.map((service) => (
+                            <div key={service.id}>
+                              <span>{service.name}</span>
+                              <b>{formatPrice(service.price)}</b>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedQuotedServices.length > 0 && (
+                      <div className={styles.summarySection}>
+                        <strong>Cotizados previamente</strong>
+                        <div className={styles.summaryList}>
+                          {selectedQuotedServices.map((service) => (
+                            <div key={service.id}>
+                              <span>{service.name}</span>
+                              <b>Cotizado</b>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
 
                 <div className={styles.summaryTotal}>
-                  <span>Total estimado</span>
+                  <span>Total precio fijo</span>
                   <strong>{formatPrice(total)}</strong>
                 </div>
               </div>
@@ -483,15 +590,15 @@ export default function ReservarPage() {
               <button
                 className={styles.submitButton}
                 type="submit"
-                disabled={!selectedServices.length}
+                disabled={!hasAnyService}
               >
                 Enviar solicitud por WhatsApp
                 <span aria-hidden="true">→</span>
               </button>
 
               <p className={styles.formNote}>
-                Esta solicitud no confirma automáticamente la cita. Zénit
-                confirmará fecha y hora por WhatsApp.
+                La cotización previa no se modifica aquí. Zénit únicamente
+                confirmará disponibilidad, fecha y hora por WhatsApp.
               </p>
             </form>
           </section>
@@ -500,12 +607,11 @@ export default function ReservarPage() {
         <div className={styles.bookingNote}>
           <span aria-hidden="true">✦</span>
           <div>
-            <small>¿Buscás color o tratamiento?</small>
-            <strong>Primero cotizamos, luego reservamos.</strong>
+            <small>¿Todavía no cotizaste?</small>
+            <strong>Primero cotizamos. Después reservamos.</strong>
             <p>
-              Tintes y tratamientos capilares dependen de valoración, largo y
-              cantidad de cabello. Podés seleccionar varios y cotizarlos juntos
-              desde Servicios.
+              Si querés un tinte o tratamiento y todavía no tenés cotización,
+              seleccioná el servicio desde Servicios y envialo por WhatsApp.
             </p>
             <Link href="/servicios">Ir a cotizar servicios →</Link>
           </div>

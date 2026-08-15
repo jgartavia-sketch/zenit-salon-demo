@@ -221,6 +221,7 @@ export default function TiendaPage() {
           <Link href="/registro">Registro</Link>
           <Link className="active" href="/tienda">Tienda</Link>
           <Link href="/servicios">Servicios</Link>
+          <Link href="/reservar">Reservar</Link>
           <Link href="/nosotros">Nosotros</Link>
         </nav>
 
@@ -236,7 +237,7 @@ export default function TiendaPage() {
             <span>{totalItems}</span>
           </button>
 
-          <Link className="button button-small" href="/servicios#solicitar-servicio">
+          <Link className="button button-small" href="/reservar">
             Reservar
           </Link>
 
