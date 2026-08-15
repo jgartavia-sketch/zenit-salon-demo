@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import styles from "./servicios.module.css";
 
@@ -11,8 +11,9 @@ type Service = {
   name: string;
   category: string;
   mode: ServiceMode;
-  price?: number;
-  note?: string;
+  price?: number | null;
+  durationMinutes?: number | null;
+  note?: string | null;
 };
 
 type ServiceCategory = {
@@ -23,12 +24,13 @@ type ServiceCategory = {
   services: Service[];
 };
 
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/$/, "");
 const WHATSAPP_NUMBER = "50671246337";
 
 const sharedIncluded =
   "Incluye lavado, secado y planchado al finalizar el servicio.";
 
-const serviceCategories: ServiceCategory[] = [
+const fallbackServiceCategories: ServiceCategory[] = [
   {
     id: "cortes",
     name: "Cortes",
@@ -97,8 +99,6 @@ const serviceCategories: ServiceCategory[] = [
   },
 ];
 
-const allServices = serviceCategories.flatMap((category) => category.services);
-
 function formatPrice(value: number) {
   return `₡${value.toLocaleString("es-CR")}`;
 }
@@ -122,10 +122,40 @@ export default function ServiciosPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [serviceCategories, setServiceCategories] = useState<ServiceCategory[]>(
+    fallbackServiceCategories,
+  );
+
+  useEffect(() => {
+    const loadServices = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/catalog/services`, {
+          cache: "no-store",
+        });
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (Array.isArray(data.categories) && data.categories.length > 0) {
+          setServiceCategories(data.categories);
+        }
+      } catch {
+        // El catálogo local de respaldo mantiene la página operativa
+        // mientras el backend no esté disponible.
+      }
+    };
+
+    void loadServices();
+  }, []);
+
+  const allServices = useMemo(
+    () => serviceCategories.flatMap((category) => category.services),
+    [serviceCategories],
+  );
 
   const selectedServices = useMemo(
     () => allServices.filter((service) => selectedIds.includes(service.id)),
-    [selectedIds],
+    [allServices, selectedIds],
   );
 
   const quoteServices = useMemo(
@@ -377,7 +407,7 @@ export default function ServiciosPage() {
                           </span>
 
                           <span className={styles.servicePrice}>
-                            {service.price
+                            {typeof service.price === "number"
                               ? formatPrice(service.price)
                               : "Cotizar"}
                           </span>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import styles from "./tienda.module.css";
 
@@ -12,102 +12,137 @@ type Product = {
   price: number;
   description: string;
   image: string;
+  stock?: number | null;
+  available: boolean;
+};
+
+type ProductCategory = {
+  id: string;
+  name: string;
+  description?: string | null;
+  products: Product[];
 };
 
 type CartItem = Product & {
   quantity: number;
 };
 
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/$/, "");
 const WHATSAPP_NUMBER = "50671246337";
 
-const products: Product[] = [
+const fallbackCategories: ProductCategory[] = [
   {
-    id: "yoorganic-moisturizing-shampoo",
-    name: "Moisturizing Shampoo",
-    brand: "YOORGANIC",
-    category: "Shampoo",
-    price: 1000,
-    description:
-      "Shampoo profesional de enfoque hidratante para cabello seco o sensibilizado. Ayuda a mantener una apariencia suave, manejable y con brillo dentro de la rutina capilar.",
-    image: "/images/productos/yoorganic-moisturizing-shampoo.png",
+    id: "shampoo",
+    name: "Shampoo",
+    products: [
+      {
+        id: "yoorganic-moisturizing-shampoo",
+        name: "Moisturizing Shampoo",
+        brand: "YOORGANIC",
+        category: "Shampoo",
+        price: 1000,
+        description:
+          "Shampoo profesional de enfoque hidratante para cabello seco o sensibilizado. Ayuda a mantener una apariencia suave, manejable y con brillo dentro de la rutina capilar.",
+        image: "/images/productos/yoorganic-moisturizing-shampoo.png",
+        available: true,
+      },
+      {
+        id: "yoorganic-nourishing-shampoo",
+        name: "Nourishing Shampoo",
+        brand: "YOORGANIC",
+        category: "Shampoo",
+        price: 1000,
+        description:
+          "Shampoo nutritivo para complementar rutinas de cuidado profesional, especialmente en cabellos que necesitan suavidad, manejabilidad y una apariencia saludable.",
+        image: "/images/productos/yoorganic-nourishing-shampoo.png",
+        available: true,
+      },
+      {
+        id: "nevada-silver-shampoo",
+        name: "Silver Shampoo",
+        brand: "Nevada Professional",
+        category: "Shampoo",
+        price: 1000,
+        description:
+          "Shampoo tipo silver pensado para el mantenimiento cosmético de cabellos claros, grises o decolorados. Ideal para una rutina de cuidado orientada a mantener una apariencia fría y uniforme.",
+        image: "/images/productos/nevada-silver-shampoo.png",
+        available: true,
+      },
+    ],
   },
   {
-    id: "yoorganic-nourishing-shampoo",
-    name: "Nourishing Shampoo",
-    brand: "YOORGANIC",
-    category: "Shampoo",
-    price: 1000,
-    description:
-      "Shampoo nutritivo para complementar rutinas de cuidado profesional, especialmente en cabellos que necesitan suavidad, manejabilidad y una apariencia saludable.",
-    image: "/images/productos/yoorganic-nourishing-shampoo.png",
+    id: "aceites-serums",
+    name: "Aceites y sérums",
+    products: [
+      {
+        id: "yoorganic-nourishing-oil",
+        name: "Nourishing Oil",
+        brand: "YOORGANIC",
+        category: "Aceites y sérums",
+        price: 1000,
+        description:
+          "Aceite capilar de acabado para medios y puntas. Ayuda a aportar brillo, suavidad y una apariencia más pulida dentro de la rutina diaria o profesional.",
+        image: "/images/productos/yoorganic-nourishing-oil.png",
+        available: true,
+      },
+      {
+        id: "karseell-maca-essence-oil",
+        name: "Maca Essence Oil",
+        brand: "Karseell",
+        category: "Aceites y sérums",
+        price: 1000,
+        description:
+          "Aceite capilar pensado para aportar nutrición, brillo, hidratación y control del frizz. Puede aplicarse principalmente en medios y puntas para complementar el acabado del cabello.",
+        image: "/images/productos/karseell-maca-essence-oil.png",
+        available: true,
+      },
+    ],
   },
   {
-    id: "nevada-silver-shampoo",
-    name: "Silver Shampoo",
-    brand: "Nevada Professional",
-    category: "Shampoo",
-    price: 1000,
-    description:
-      "Shampoo tipo silver pensado para el mantenimiento cosmético de cabellos claros, grises o decolorados. Ideal para una rutina de cuidado orientada a mantener una apariencia fría y uniforme.",
-    image: "/images/productos/nevada-silver-shampoo.png",
+    id: "tratamientos-productos",
+    name: "Tratamientos",
+    products: [
+      {
+        id: "yoorganic-protein-hair-repairing-liquid",
+        name: "Protein Hair Repairing Liquid",
+        brand: "YOORGANIC",
+        category: "Tratamientos",
+        price: 1000,
+        description:
+          "Tratamiento capilar líquido orientado al cuidado del cabello sensibilizado. Puede integrarse a una rutina profesional enfocada en mejorar suavidad, apariencia y manejabilidad.",
+        image: "/images/productos/yoorganic-protein-hair-repairing-liquid.png",
+        available: true,
+      },
+      {
+        id: "nevada-leave-in-thermoactive",
+        name: "Leave-in Thermoactive",
+        brand: "Nevada Professional",
+        category: "Tratamientos",
+        price: 1000,
+        description:
+          "Tratamiento sin enjuague pensado para acompañar el peinado y la preparación del cabello antes del secado o del uso de herramientas térmicas.",
+        image: "/images/productos/nevada-leave-in-thermoactive.png",
+        available: true,
+      },
+    ],
   },
   {
-    id: "yoorganic-nourishing-oil",
-    name: "Nourishing Oil",
-    brand: "YOORGANIC",
-    category: "Aceites y sérums",
-    price: 1000,
-    description:
-      "Aceite capilar de acabado para medios y puntas. Ayuda a aportar brillo, suavidad y una apariencia más pulida dentro de la rutina diaria o profesional.",
-    image: "/images/productos/yoorganic-nourishing-oil.png",
+    id: "proteccion-termica",
+    name: "Protección térmica",
+    products: [
+      {
+        id: "wella-eimi-thermal-image",
+        name: "EIMI Thermal Image",
+        brand: "Wella Professionals",
+        category: "Protección térmica",
+        price: 1000,
+        description:
+          "Spray de protección térmica diseñado para utilizarse antes del estilizado con herramientas de calor. Complementa el peinado profesional y ayuda a mantener un acabado pulido.",
+        image: "/images/productos/wella-eimi-thermal-image.png",
+        available: true,
+      },
+    ],
   },
-  {
-    id: "karseell-maca-essence-oil",
-    name: "Maca Essence Oil",
-    brand: "Karseell",
-    category: "Aceites y sérums",
-    price: 1000,
-    description:
-      "Aceite capilar pensado para aportar nutrición, brillo, hidratación y control del frizz. Puede aplicarse principalmente en medios y puntas para complementar el acabado del cabello.",
-    image: "/images/productos/karseell-maca-essence-oil.png",
-  },
-  {
-    id: "yoorganic-protein-hair-repairing-liquid",
-    name: "Protein Hair Repairing Liquid",
-    brand: "YOORGANIC",
-    category: "Tratamientos",
-    price: 1000,
-    description:
-      "Tratamiento capilar líquido orientado al cuidado del cabello sensibilizado. Puede integrarse a una rutina profesional enfocada en mejorar suavidad, apariencia y manejabilidad.",
-    image: "/images/productos/yoorganic-protein-hair-repairing-liquid.png",
-  },
-  {
-    id: "nevada-leave-in-thermoactive",
-    name: "Leave-in Thermoactive",
-    brand: "Nevada Professional",
-    category: "Tratamientos",
-    price: 1000,
-    description:
-      "Tratamiento sin enjuague pensado para acompañar el peinado y la preparación del cabello antes del secado o del uso de herramientas térmicas.",
-    image: "/images/productos/nevada-leave-in-thermoactive.png",
-  },
-  {
-    id: "wella-eimi-thermal-image",
-    name: "EIMI Thermal Image",
-    brand: "Wella Professionals",
-    category: "Protección térmica",
-    price: 1000,
-    description:
-      "Spray de protección térmica diseñado para utilizarse antes del estilizado con herramientas de calor. Complementa el peinado profesional y ayuda a mantener un acabado pulido.",
-    image: "/images/productos/wella-eimi-thermal-image.png",
-  },
-];
-
-const categories = [
-  "Shampoo",
-  "Aceites y sérums",
-  "Tratamientos",
-  "Protección térmica",
 ];
 
 function formatPrice(value: number) {
@@ -119,8 +154,51 @@ export default function TiendaPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
+  const [catalogCategories, setCatalogCategories] =
+    useState<ProductCategory[]>(fallbackCategories);
   const [selectedQuantities, setSelectedQuantities] = useState<Record<string, number>>(
-    () => Object.fromEntries(products.map((product) => [product.id, 1])),
+    () =>
+      Object.fromEntries(
+        fallbackCategories.flatMap((category) =>
+          category.products.map((product) => [product.id, 1]),
+        ),
+      ),
+  );
+
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/catalog/products`, {
+          cache: "no-store",
+        });
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (Array.isArray(data.categories) && data.categories.length > 0) {
+          setCatalogCategories(data.categories);
+          setSelectedQuantities((current) => {
+            const next = { ...current };
+            for (const category of data.categories as ProductCategory[]) {
+              for (const product of category.products) {
+                if (!next[product.id]) next[product.id] = 1;
+              }
+            }
+            return next;
+          });
+        }
+      } catch {
+        // El catálogo embebido conserva la tienda operativa
+        // si el backend no está disponible temporalmente.
+      }
+    };
+
+    void loadProducts();
+  }, []);
+
+  const products = useMemo(
+    () => catalogCategories.flatMap((category) => category.products),
+    [catalogCategories],
   );
 
   const totalItems = useMemo(
@@ -133,15 +211,34 @@ export default function TiendaPage() {
     [cart],
   );
 
-  const changeSelectedQuantity = (productId: string, amount: number) => {
+  const maxQuantityFor = (product: Product) => {
+    if (typeof product.stock === "number") {
+      return Math.max(0, Math.min(99, product.stock));
+    }
+    return 99;
+  };
+
+  const changeSelectedQuantity = (product: Product, amount: number) => {
+    const max = Math.max(1, maxQuantityFor(product));
     setSelectedQuantities((current) => ({
       ...current,
-      [productId]: Math.max(1, Math.min(99, (current[productId] || 1) + amount)),
+      [product.id]: Math.max(
+        1,
+        Math.min(max, (current[product.id] || 1) + amount),
+      ),
     }));
   };
 
   const addToCart = (product: Product) => {
-    const quantityToAdd = selectedQuantities[product.id] || 1;
+    if (!product.available) return;
+
+    const max = maxQuantityFor(product);
+    if (max <= 0) return;
+
+    const quantityToAdd = Math.min(
+      selectedQuantities[product.id] || 1,
+      max,
+    );
 
     setCart((current) => {
       const existing = current.find((item) => item.id === product.id);
@@ -149,7 +246,10 @@ export default function TiendaPage() {
       if (existing) {
         return current.map((item) =>
           item.id === product.id
-            ? { ...item, quantity: item.quantity + quantityToAdd }
+            ? {
+                ...item,
+                quantity: Math.min(item.quantity + quantityToAdd, max),
+              }
             : item,
         );
       }
@@ -164,11 +264,14 @@ export default function TiendaPage() {
   const changeQuantity = (productId: string, amount: number) => {
     setCart((current) =>
       current
-        .map((item) =>
-          item.id === productId
-            ? { ...item, quantity: item.quantity + amount }
-            : item,
-        )
+        .map((item) => {
+          if (item.id !== productId) return item;
+          const max = Math.max(1, maxQuantityFor(item));
+          return {
+            ...item,
+            quantity: Math.min(max, item.quantity + amount),
+          };
+        })
         .filter((item) => item.quantity > 0),
     );
   };
@@ -204,10 +307,10 @@ export default function TiendaPage() {
     );
   };
 
-  const toggleCategory = (category: string) => {
+  const toggleCategory = (categoryId: string) => {
     setOpenCategories((current) => ({
       ...current,
-      [category]: !current[category],
+      [categoryId]: !current[categoryId],
     }));
   };
 
@@ -401,29 +504,25 @@ export default function TiendaPage() {
           </div>
 
           <div className={styles.catalog}>
-            {categories.map((category) => {
-              const categoryProducts = products.filter(
-                (product) => product.category === category,
-              );
-
-              const isCategoryOpen = Boolean(openCategories[category]);
+            {catalogCategories.map((category) => {
+              const isCategoryOpen = Boolean(openCategories[category.id]);
 
               return (
                 <section
                   className={`${styles.categorySection} ${isCategoryOpen ? styles.categoryOpen : ""}`}
-                  key={category}
+                  key={category.id}
                 >
                   <button
                     type="button"
                     className={styles.categoryToggle}
-                    onClick={() => toggleCategory(category)}
+                    onClick={() => toggleCategory(category.id)}
                     aria-expanded={isCategoryOpen}
                   >
                     <div className={styles.categoryHeading}>
                       <span>✦</span>
                       <div>
                         <p>Categoría</p>
-                        <h2>{category}</h2>
+                        <h2>{category.name}</h2>
                       </div>
                     </div>
 
@@ -437,7 +536,7 @@ export default function TiendaPage() {
 
                   <div className={styles.categoryContent} aria-hidden={!isCategoryOpen}>
                     <div className={styles.productGrid}>
-                    {categoryProducts.map((product) => {
+                    {category.products.map((product) => {
                       const selectedQuantity = selectedQuantities[product.id] || 1;
 
                       return (
@@ -471,16 +570,18 @@ export default function TiendaPage() {
                               >
                                 <button
                                   type="button"
-                                  onClick={() => changeSelectedQuantity(product.id, -1)}
+                                  onClick={() => changeSelectedQuantity(product, -1)}
                                   aria-label={`Reducir cantidad de ${product.name}`}
+                                  disabled={!product.available}
                                 >
                                   −
                                 </button>
                                 <span>{selectedQuantity}</span>
                                 <button
                                   type="button"
-                                  onClick={() => changeSelectedQuantity(product.id, 1)}
+                                  onClick={() => changeSelectedQuantity(product, 1)}
                                   aria-label={`Aumentar cantidad de ${product.name}`}
+                                  disabled={!product.available}
                                 >
                                   +
                                 </button>
@@ -490,8 +591,9 @@ export default function TiendaPage() {
                                 type="button"
                                 className={styles.addButton}
                                 onClick={() => addToCart(product)}
+                                disabled={!product.available}
                               >
-                                Agregar
+                                {product.available ? "Agregar" : "No disponible"}
                                 <span aria-hidden="true">＋</span>
                               </button>
                             </div>

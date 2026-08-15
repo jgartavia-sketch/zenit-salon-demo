@@ -4,53 +4,100 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import styles from "./reservar.module.css";
 
-type ReservableService = {
+type ServiceMode = "quote" | "reserve";
+
+type CatalogService = {
   id: string;
   name: string;
+  category: string;
+  mode: ServiceMode;
+  price?: number | null;
+  note?: string | null;
+};
+
+type ServiceCategory = {
+  id: string;
+  name: string;
+  eyebrow: string;
+  description: string;
+  services: CatalogService[];
+};
+
+type ReservableService = CatalogService & {
+  mode: "reserve";
   price: number;
-  category: string;
 };
 
-type QuotedService = {
-  id: string;
-  name: string;
-  category: string;
+type QuotedService = CatalogService & {
+  mode: "quote";
 };
 
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/$/, "");
 const WHATSAPP_NUMBER = "50671246337";
 
-const reservableServices: ReservableService[] = [
-  { id: "corte-recto", name: "Corte recto", price: 5000, category: "Cortes" },
-  { id: "corte-v", name: "Corte en V", price: 5000, category: "Cortes" },
-  { id: "corte-mariposa", name: "Corte mariposa", price: 5000, category: "Cortes" },
-  { id: "corte-capas", name: "Corte en capas", price: 5000, category: "Cortes" },
-  { id: "corte-pixie", name: "Corte pixie", price: 5000, category: "Cortes" },
-  { id: "corte-bob-chanel", name: "Corte bob o chanel", price: 5000, category: "Cortes" },
-  { id: "corte-clasico-hombre", name: "Corte clásico de hombre", price: 5000, category: "Cortes" },
+const fallbackCategories: ServiceCategory[] = [
   {
-    id: "lavado-secado-planchado-tratamiento",
-    name: "Lavado + secado + planchado + tratamiento básico",
-    price: 10000,
-    category: "Servicio completo",
+    id: "cortes",
+    name: "Cortes",
+    eyebrow: "Precio fijo",
+    description: "Cortes con precio fijo.",
+    services: [
+      { id: "corte-recto", name: "Corte recto", price: 5000, category: "Cortes", mode: "reserve" },
+      { id: "corte-v", name: "Corte en V", price: 5000, category: "Cortes", mode: "reserve" },
+      { id: "corte-mariposa", name: "Corte mariposa", price: 5000, category: "Cortes", mode: "reserve" },
+      { id: "corte-capas", name: "Corte en capas", price: 5000, category: "Cortes", mode: "reserve" },
+      { id: "corte-pixie", name: "Corte pixie", price: 5000, category: "Cortes", mode: "reserve" },
+      { id: "corte-bob-chanel", name: "Corte bob o chanel", price: 5000, category: "Cortes", mode: "reserve" },
+      { id: "corte-clasico-hombre", name: "Corte clásico de hombre", price: 5000, category: "Cortes", mode: "reserve" },
+    ],
   },
-];
-
-const quotedServices: QuotedService[] = [
-  { id: "velo-brillo", name: "Velo de brillo", category: "Tratamientos capilares" },
-  { id: "aminoacidos", name: "Aminoácidos", category: "Tratamientos capilares" },
-  { id: "tratamiento-danos", name: "Tratamiento de daños", category: "Tratamientos capilares" },
-  { id: "botox-alisante", name: "Botox alisante", category: "Tratamientos capilares" },
-  { id: "botox-humectante", name: "Botox humectante", category: "Tratamientos capilares" },
-  { id: "celulas-madres", name: "Células madres", category: "Tratamientos capilares" },
-  { id: "keratina", name: "Keratina", category: "Tratamientos capilares" },
-  { id: "nanoplastia", name: "Nanoplastia", category: "Tratamientos capilares" },
-  { id: "liso-extremo", name: "Liso extremo", category: "Tratamientos capilares" },
-  { id: "tinte-fantasia", name: "Tinte fantasía", category: "Tintes" },
-  { id: "tinte-global", name: "Tinte global", category: "Tintes" },
-  { id: "cubrimiento-canas", name: "Cubrimiento de canas", category: "Tintes" },
-  { id: "mechas-rayitos", name: "Diseño de mechas y rayitos", category: "Tintes" },
-  { id: "balayage", name: "Balayage", category: "Tintes" },
-  { id: "morena-iluminada", name: "Morena iluminada", category: "Tintes" },
+  {
+    id: "tratamientos-capilares",
+    name: "Tratamientos capilares",
+    eyebrow: "Cotización personalizada",
+    description: "Servicios cotizados previamente.",
+    services: [
+      { id: "velo-brillo", name: "Velo de brillo", category: "Tratamientos capilares", mode: "quote" },
+      { id: "aminoacidos", name: "Aminoácidos", category: "Tratamientos capilares", mode: "quote" },
+      { id: "tratamiento-danos", name: "Tratamiento de daños", category: "Tratamientos capilares", mode: "quote" },
+      { id: "botox-alisante", name: "Botox alisante", category: "Tratamientos capilares", mode: "quote" },
+      { id: "botox-humectante", name: "Botox humectante", category: "Tratamientos capilares", mode: "quote" },
+      { id: "celulas-madres", name: "Células madres", category: "Tratamientos capilares", mode: "quote" },
+      { id: "keratina", name: "Keratina", category: "Tratamientos capilares", mode: "quote" },
+      { id: "nanoplastia", name: "Nanoplastia", category: "Tratamientos capilares", mode: "quote" },
+      { id: "liso-extremo", name: "Liso extremo", category: "Tratamientos capilares", mode: "quote" },
+    ],
+  },
+  {
+    id: "tintes",
+    name: "Tintes",
+    eyebrow: "Cotización personalizada",
+    description: "Servicios cotizados previamente.",
+    services: [
+      { id: "tinte-fantasia", name: "Tinte fantasía", category: "Tintes", mode: "quote" },
+      { id: "tinte-global", name: "Tinte global", category: "Tintes", mode: "quote" },
+      { id: "cubrimiento-canas", name: "Cubrimiento de canas", category: "Tintes", mode: "quote" },
+      { id: "mechas-rayitos", name: "Diseño de mechas y rayitos", category: "Tintes", mode: "quote" },
+      { id: "balayage", name: "Balayage", category: "Tintes", mode: "quote" },
+      { id: "morena-iluminada", name: "Morena iluminada", category: "Tintes", mode: "quote" },
+    ],
+  },
+  {
+    id: "lavado-secado-planchado",
+    name: "Lavado, secado y planchado",
+    eyebrow: "Servicio completo",
+    description: "Servicio completo con tratamiento básico.",
+    services: [
+      {
+        id: "lavado-secado-planchado-tratamiento",
+        name: "Lavado + secado + planchado + tratamiento básico",
+        price: 10000,
+        category: "Lavado, secado y planchado",
+        mode: "reserve",
+        note: "Tratamiento básico incluido.",
+      },
+    ],
+  },
 ];
 
 function formatPrice(value: number) {
@@ -66,10 +113,55 @@ function todayISO() {
 
 export default function ReservarPage() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [catalogCategories, setCatalogCategories] =
+    useState<ServiceCategory[]>(fallbackCategories);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [alreadyQuoted, setAlreadyQuoted] = useState(false);
   const [selectedQuotedIds, setSelectedQuotedIds] = useState<string[]>([]);
   const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    const loadServices = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/catalog/services`, {
+          cache: "no-store",
+        });
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (Array.isArray(data.categories) && data.categories.length > 0) {
+          setCatalogCategories(data.categories);
+        }
+      } catch {
+        // El respaldo local evita romper Reservar si el API está temporalmente fuera.
+      }
+    };
+
+    void loadServices();
+  }, []);
+
+  const allServices = useMemo(
+    () => catalogCategories.flatMap((category) => category.services),
+    [catalogCategories],
+  );
+
+  const reservableServices = useMemo(
+    () =>
+      allServices.filter(
+        (service): service is ReservableService =>
+          service.mode === "reserve" && typeof service.price === "number",
+      ),
+    [allServices],
+  );
+
+  const quotedServices = useMemo(
+    () =>
+      allServices.filter(
+        (service): service is QuotedService => service.mode === "quote",
+      ),
+    [allServices],
+  );
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -82,17 +174,37 @@ export default function ReservarPage() {
       .filter((id) => reservableServices.some((service) => service.id === id));
 
     setSelectedIds([...new Set(validIds)]);
-  }, []);
+  }, [reservableServices]);
 
   const selectedServices = useMemo(
     () => reservableServices.filter((service) => selectedIds.includes(service.id)),
-    [selectedIds],
+    [reservableServices, selectedIds],
   );
 
   const selectedQuotedServices = useMemo(
     () => quotedServices.filter((service) => selectedQuotedIds.includes(service.id)),
-    [selectedQuotedIds],
+    [quotedServices, selectedQuotedIds],
   );
+
+  const reservableGroups = useMemo(() => {
+    const groups = new Map<string, ReservableService[]>();
+    for (const service of reservableServices) {
+      const current = groups.get(service.category) || [];
+      current.push(service);
+      groups.set(service.category, current);
+    }
+    return [...groups.entries()].map(([name, services]) => ({ name, services }));
+  }, [reservableServices]);
+
+  const quotedGroups = useMemo(() => {
+    const groups = new Map<string, QuotedService[]>();
+    for (const service of quotedServices) {
+      const current = groups.get(service.category) || [];
+      current.push(service);
+      groups.set(service.category, current);
+    }
+    return [...groups.entries()].map(([name, services]) => ({ name, services }));
+  }, [quotedServices]);
 
   const total = useMemo(
     () => selectedServices.reduce((sum, service) => sum + service.price, 0),
@@ -297,91 +409,60 @@ export default function ReservarPage() {
             </div>
 
             <div className={styles.serviceGroups}>
-              <div className={styles.serviceGroup}>
-                <div className={styles.groupTitle}>
-                  <div>
-                    <small>Precio fijo</small>
-                    <h4>Cortes</h4>
+              {reservableGroups.map((group) => {
+                const uniquePrices = [...new Set(group.services.map((service) => service.price))];
+                const groupPrice =
+                  uniquePrices.length === 1
+                    ? `${formatPrice(uniquePrices[0])}${group.services.length > 1 ? " c/u" : ""}`
+                    : "Precio fijo";
+
+                return (
+                  <div className={styles.serviceGroup} key={group.name}>
+                    <div className={styles.groupTitle}>
+                      <div>
+                        <small>Precio fijo</small>
+                        <h4>{group.name}</h4>
+                      </div>
+                      <span>{groupPrice}</span>
+                    </div>
+
+                    <div className={styles.serviceList}>
+                      {group.services.map((service) => {
+                        const selected = selectedIds.includes(service.id);
+
+                        return (
+                          <label
+                            className={`${styles.serviceRow} ${
+                              selected ? styles.serviceSelected : ""
+                            }`}
+                            key={service.id}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selected}
+                              onChange={() => toggleService(service.id)}
+                            />
+
+                            <span className={styles.check}>
+                              {selected ? "✓" : ""}
+                            </span>
+
+                            <span className={styles.serviceName}>
+                              <strong>{service.name}</strong>
+                              <small>
+                                {service.note ||
+                                  "Incluye lavado, secado y planchado cuando corresponda"}
+                              </small>
+                            </span>
+
+                            <b>{formatPrice(service.price)}</b>
+                          </label>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <span>₡5.000 c/u</span>
-                </div>
-
-                <div className={styles.serviceList}>
-                  {reservableServices
-                    .filter((service) => service.category === "Cortes")
-                    .map((service) => {
-                      const selected = selectedIds.includes(service.id);
-
-                      return (
-                        <label
-                          className={`${styles.serviceRow} ${
-                            selected ? styles.serviceSelected : ""
-                          }`}
-                          key={service.id}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selected}
-                            onChange={() => toggleService(service.id)}
-                          />
-
-                          <span className={styles.check}>
-                            {selected ? "✓" : ""}
-                          </span>
-
-                          <span className={styles.serviceName}>
-                            <strong>{service.name}</strong>
-                            <small>Incluye lavado, secado y planchado</small>
-                          </span>
-
-                          <b>{formatPrice(service.price)}</b>
-                        </label>
-                      );
-                    })}
-                </div>
-              </div>
-
-              <div className={styles.serviceGroup}>
-                <div className={styles.groupTitle}>
-                  <div>
-                    <small>Servicio completo</small>
-                    <h4>Lavado, secado y planchado</h4>
-                  </div>
-                  <span>₡10.000</span>
-                </div>
-
-                {reservableServices
-                  .filter((service) => service.category === "Servicio completo")
-                  .map((service) => {
-                    const selected = selectedIds.includes(service.id);
-
-                    return (
-                      <label
-                        className={`${styles.serviceRow} ${
-                          selected ? styles.serviceSelected : ""
-                        }`}
-                        key={service.id}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selected}
-                          onChange={() => toggleService(service.id)}
-                        />
-
-                        <span className={styles.check}>
-                          {selected ? "✓" : ""}
-                        </span>
-
-                        <span className={styles.serviceName}>
-                          <strong>{service.name}</strong>
-                          <small>Tratamiento básico incluido</small>
-                        </span>
-
-                        <b>{formatPrice(service.price)}</b>
-                      </label>
-                    );
-                  })}
-              </div>
+                );
+              })}
 
               <div className={styles.quotedBlock}>
                 <label className={styles.quotedToggle}>
@@ -412,12 +493,11 @@ export default function ReservarPage() {
                       <p>Podés seleccionar uno o varios.</p>
                     </div>
 
-                    <div className={styles.quotedCategory}>
-                      <strong>Tratamientos capilares</strong>
-                      <div className={styles.quotedGrid}>
-                        {quotedServices
-                          .filter((service) => service.category === "Tratamientos capilares")
-                          .map((service) => {
+                    {quotedGroups.map((group) => (
+                      <div className={styles.quotedCategory} key={group.name}>
+                        <strong>{group.name}</strong>
+                        <div className={styles.quotedGrid}>
+                          {group.services.map((service) => {
                             const selected = selectedQuotedIds.includes(service.id);
 
                             return (
@@ -437,36 +517,9 @@ export default function ReservarPage() {
                               </label>
                             );
                           })}
+                        </div>
                       </div>
-                    </div>
-
-                    <div className={styles.quotedCategory}>
-                      <strong>Tintes</strong>
-                      <div className={styles.quotedGrid}>
-                        {quotedServices
-                          .filter((service) => service.category === "Tintes")
-                          .map((service) => {
-                            const selected = selectedQuotedIds.includes(service.id);
-
-                            return (
-                              <label
-                                className={`${styles.quotedServiceRow} ${
-                                  selected ? styles.quotedServiceSelected : ""
-                                }`}
-                                key={service.id}
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={selected}
-                                  onChange={() => toggleQuotedService(service.id)}
-                                />
-                                <span>{selected ? "✓" : ""}</span>
-                                <strong>{service.name}</strong>
-                              </label>
-                            );
-                          })}
-                      </div>
-                    </div>
+                    ))}
                   </div>
                 )}
               </div>
