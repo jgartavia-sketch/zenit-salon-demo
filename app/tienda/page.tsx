@@ -115,6 +115,7 @@ function formatPrice(value: number) {
 }
 
 export default function TiendaPage() {
+  const [menuOpen, setMenuOpen] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
@@ -157,6 +158,7 @@ export default function TiendaPage() {
     });
 
     setCartOpen(true);
+    setMenuOpen(false);
   };
 
   const changeQuantity = (productId: string, amount: number) => {
@@ -212,24 +214,50 @@ export default function TiendaPage() {
   return (
     <main className={cartOpen ? styles.cartLayoutOpen : ""}>
       <header className="site-header">
-        <Link className="brand" href="/" aria-label="Zénit Salón, inicio">
+        <Link
+          className="brand"
+          href="/"
+          aria-label="Zénit Salón, inicio"
+          onClick={() => setMenuOpen(false)}
+        >
           <img src="/logo-zenit.png" alt="Zénit Salón" />
         </Link>
 
-        <nav aria-label="Navegación principal">
-          <Link href="/">Inicio</Link>
-          <Link href="/registro">Registro</Link>
-          <Link className="active" href="/tienda">Tienda</Link>
-          <Link href="/servicios">Servicios</Link>
-          <Link href="/reservar">Reservar</Link>
-          <Link href="/nosotros">Nosotros</Link>
+        <button
+          className="menu-toggle"
+          onClick={() => {
+            setMenuOpen((open) => !open);
+            setCartOpen(false);
+          }}
+          aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
+          aria-expanded={menuOpen}
+          aria-controls="main-navigation"
+          type="button"
+        >
+          {menuOpen ? "×" : "☰"}
+        </button>
+
+        <nav
+          id="main-navigation"
+          className={menuOpen ? "nav-open" : ""}
+          aria-label="Navegación principal"
+        >
+          <Link href="/" onClick={() => setMenuOpen(false)}>Inicio</Link>
+          <Link href="/registro" onClick={() => setMenuOpen(false)}>Registro</Link>
+          <Link className="active" href="/tienda" onClick={() => setMenuOpen(false)}>Tienda</Link>
+          <Link href="/servicios" onClick={() => setMenuOpen(false)}>Servicios</Link>
+          <Link href="/reservar" onClick={() => setMenuOpen(false)}>Reservar</Link>
+          <Link href="/nosotros" onClick={() => setMenuOpen(false)}>Nosotros</Link>
         </nav>
 
         <div className="header-actions">
           <button
             type="button"
             className={styles.headerCartButton}
-            onClick={() => setCartOpen((open) => !open)}
+            onClick={() => {
+              setCartOpen((open) => !open);
+              setMenuOpen(false);
+            }}
             aria-label={`${cartOpen ? "Cerrar" : "Abrir"} carrito, ${totalItems} productos`}
             aria-expanded={cartOpen}
           >

@@ -1,0 +1,349 @@
+/* ZÉNIT SALÓN — Registro premium
+   Estilos aislados a /registro. No modifica estructura ni funcionalidad. */
+
+.loyalty {
+  position: relative;
+  overflow: hidden;
+  color: #0b1825;
+  background:
+    radial-gradient(circle at 12% 12%, rgba(255,255,255,.72), transparent 25%),
+    radial-gradient(circle at 88% 18%, rgba(42,119,181,.20), transparent 30%),
+    linear-gradient(135deg, #edf1f4 0%, #c7d0d8 24%, #f8fafb 48%, #a8b6c2 70%, #eef2f5 100%);
+  border-bottom: 1px solid rgba(25,63,95,.18);
+}
+
+.loyalty::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(115deg, transparent 0 35%, rgba(255,255,255,.34) 43%, transparent 51%);
+  opacity: .42;
+}
+
+.loyalty > * {
+  position: relative;
+  z-index: 1;
+}
+
+.loyalty .section-heading h2 {
+  color: #081a2a;
+  text-shadow: 0 1px 0 rgba(255,255,255,.95);
+}
+
+.loyalty .section-heading > p {
+  color: #526474;
+}
+
+.loyalty .eyebrow {
+  color: #173f63;
+  background: none;
+  -webkit-text-fill-color: currentColor;
+}
+
+.loyalty .eyebrow span {
+  background: linear-gradient(90deg, #163e62, #77a9cf, #ffffff);
+  box-shadow: none;
+}
+
+.loyalty-layout {
+  gap: 22px;
+}
+
+.registration-panel,
+.loyalty-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 22px;
+  border: 1px solid rgba(255,255,255,.72);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.95),
+    inset 0 -1px 0 rgba(30,57,79,.12),
+    0 24px 58px rgba(20,48,72,.16);
+}
+
+.registration-panel {
+  background:
+    radial-gradient(circle at 8% 0%, rgba(255,255,255,.96), transparent 31%),
+    linear-gradient(145deg, rgba(250,252,253,.96), rgba(202,213,222,.91) 52%, rgba(244,247,249,.96));
+  border-color: rgba(70,101,126,.25);
+}
+
+.registration-panel::after,
+.loyalty-card::before,
+.benefit-strip > div::after {
+  content: "";
+  position: absolute;
+  z-index: 5;
+  top: -55%;
+  left: -75%;
+  width: 28%;
+  height: 215%;
+  pointer-events: none;
+  opacity: 0;
+  transform: rotate(22deg);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255,255,255,.12),
+    rgba(255,255,255,.92),
+    rgba(255,255,255,.12),
+    transparent
+  );
+  transition: left 1.65s cubic-bezier(.2,.65,.25,1), opacity .35s ease;
+}
+
+.registration-panel:hover::after,
+.loyalty-card:hover::before,
+.benefit-strip > div:hover::after {
+  left: 145%;
+  opacity: .72;
+}
+
+.panel-title {
+  border-bottom-color: rgba(26,66,99,.17);
+}
+
+.panel-title > span {
+  color: #153d60;
+  border-color: rgba(31,74,109,.30);
+  background:
+    linear-gradient(145deg, #ffffff 0%, #b9c5ce 48%, #f8fafb 100%);
+  box-shadow:
+    inset 0 1px 0 #fff,
+    inset 0 -1px 0 rgba(30,56,77,.16),
+    0 8px 20px rgba(25,58,85,.12);
+  -webkit-text-fill-color: #153d60;
+}
+
+.panel-title small {
+  color: #687b8b;
+}
+
+.panel-title h3 {
+  color: #0d2438;
+}
+
+.registration-form label {
+  color: #294258;
+}
+
+.registration-form label small {
+  color: #708190;
+}
+
+.registration-form input {
+  color: #0b1d2d;
+  background: rgba(255,255,255,.78);
+  border-color: rgba(39,77,107,.20);
+  box-shadow:
+    inset 0 1px 2px rgba(24,48,68,.05),
+    0 1px 0 rgba(255,255,255,.9);
+  transition: border-color .25s ease, box-shadow .25s ease, background .25s ease;
+}
+
+.registration-form input::placeholder {
+  color: #84919c;
+}
+
+.registration-form input:focus {
+  color: #071827;
+  background: #fff;
+  border-color: #3479aa;
+  box-shadow:
+    0 0 0 3px rgba(22,142,209,.10),
+    0 10px 25px rgba(25,66,98,.09);
+}
+
+.terms-check {
+  color: #526575 !important;
+}
+
+.terms-check input {
+  accent-color: #17527d;
+}
+
+.registration-panel .button {
+  border-color: rgba(38,72,99,.30);
+  background:
+    linear-gradient(110deg, #445462 0%, #f8fafb 18%, #8999a6 34%, #ffffff 49%, #536a7c 67%, #dfe7ec 83%, #405566 100%);
+  background-size: 220% 100%;
+  box-shadow:
+    inset 0 1px 0 #fff,
+    inset 0 -1px 0 rgba(13,36,54,.42),
+    0 13px 28px rgba(25,63,93,.18);
+}
+
+.loyalty-card {
+  color: #fff;
+  background:
+    radial-gradient(circle at 88% 8%, rgba(119,185,231,.27), transparent 31%),
+    linear-gradient(
+      135deg,
+      #06121e 0%,
+      #102e48 25%,
+      #3e5d72 42%,
+      #b6c1ca 50%,
+      #244965 58%,
+      #0a1a29 78%,
+      #06121e 100%
+    );
+  background-size: 180% 180%;
+  border-color: rgba(222,235,244,.30);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.38),
+    inset 0 -1px 0 rgba(0,0,0,.5),
+    0 28px 68px rgba(7,35,57,.30);
+}
+
+.loyalty-card::after {
+  border-color: rgba(255,255,255,.14);
+  box-shadow:
+    0 0 0 34px rgba(255,255,255,.018),
+    0 0 85px rgba(104,181,231,.13);
+}
+
+.loyalty-card .card-top {
+  border-bottom-color: rgba(255,255,255,.16);
+}
+
+.loyalty-card .card-top small,
+.loyalty-card .customer-data small,
+.loyalty-card .points-total small,
+.loyalty-card .points-split small,
+.loyalty-card .referral-generator small {
+  color: #adbdc9;
+}
+
+.loyalty-card .card-top strong,
+.loyalty-card .customer-data h3,
+.loyalty-card .points-total strong,
+.loyalty-card .points-split strong,
+.loyalty-card .referral-generator strong {
+  color: #fff;
+}
+
+.loyalty-card .customer-data p,
+.loyalty-card .referral-generator span {
+  color: #b7c4ce;
+}
+
+.loyalty-card .points-total > span {
+  color: #e1f1fb;
+  background: none;
+  -webkit-text-fill-color: currentColor;
+}
+
+.loyalty-card .points-split div {
+  border-color: rgba(255,255,255,.15);
+  background: linear-gradient(145deg, rgba(255,255,255,.11), rgba(255,255,255,.025));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+}
+
+.loyalty-card .referral-generator {
+  border-color: rgba(205,226,240,.46);
+  background: rgba(214,232,244,.075);
+}
+
+.loyalty-card .referral-generator button,
+.loyalty-card .referral-generator a {
+  border-color: rgba(215,232,243,.40);
+  background: linear-gradient(145deg, rgba(255,255,255,.14), rgba(255,255,255,.04));
+}
+
+.demo-note {
+  color: #9baab6;
+}
+
+.benefit-strip {
+  gap: 12px;
+  background: transparent;
+  border: 0;
+}
+
+.benefit-strip > div {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid rgba(52,85,111,.19);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(255,255,255,.94), transparent 35%),
+    linear-gradient(145deg, rgba(250,252,253,.94), rgba(193,205,215,.80) 52%, rgba(247,249,250,.96));
+  box-shadow:
+    inset 0 1px 0 #fff,
+    0 13px 32px rgba(24,56,82,.10);
+  transition: transform .4s ease, border-color .4s ease, box-shadow .4s ease;
+}
+
+.benefit-strip > div:hover {
+  transform: translateY(-5px);
+  border-color: rgba(30,82,122,.30);
+  box-shadow:
+    inset 0 1px 0 #fff,
+    0 22px 45px rgba(20,61,93,.16);
+}
+
+.benefit-strip span {
+  color: #1b5c89;
+  background: none;
+  -webkit-text-fill-color: currentColor;
+}
+
+.benefit-strip strong {
+  color: #102b42;
+}
+
+.benefit-strip p {
+  color: #5b6e7e;
+}
+
+.registration-success h3 {
+  color: #0d2438;
+}
+
+.registration-success p:not(.eyebrow) {
+  color: #5b6d7c;
+}
+
+@media (max-width: 720px) {
+  .loyalty {
+    background:
+      radial-gradient(circle at 50% 4%, rgba(255,255,255,.68), transparent 22rem),
+      radial-gradient(circle at 90% 30%, rgba(42,119,181,.17), transparent 22rem),
+      linear-gradient(160deg, #edf2f5, #bcc8d2 50%, #f5f7f9);
+  }
+
+  .registration-panel,
+  .loyalty-card {
+    border-radius: 18px;
+  }
+
+  .benefit-strip {
+    gap: 12px;
+  }
+
+  .benefit-strip > div {
+    border-radius: 16px;
+  }
+}
+
+@media (hover: none) {
+  .registration-panel:hover::after,
+  .loyalty-card:hover::before,
+  .benefit-strip > div:hover::after {
+    opacity: 0;
+  }
+
+  .benefit-strip > div:hover {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .registration-panel::after,
+  .loyalty-card::before,
+  .benefit-strip > div::after {
+    display: none;
+  }
+}
