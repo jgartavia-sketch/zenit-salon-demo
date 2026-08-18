@@ -78,24 +78,45 @@ export default function Home() {
 
   useEffect(() => {
     const loadSession = async () => {
+      const token =
+        typeof window === "undefined"
+          ? null
+          : localStorage.getItem(TOKEN_KEY);
+
+      if (!token) {
+        setSessionLoading(false);
+        return;
+      }
+
       try {
         const response = await fetch(`${API_URL}/api/auth/me`, {
           cache: "no-store",
-          headers: authHeaders(),
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         });
+
         if (response.ok) {
           const data = await response.json();
           setProfile(data.customer);
           setMovements(data.movements || []);
+
           if (data.referral) {
             setReferralCode(data.referral.code);
             setReferralExpiry(data.referral.expiry);
           }
+        } else if (response.status === 401) {
+          localStorage.removeItem(TOKEN_KEY);
+          setProfile(null);
+          setMovements([]);
+          setReferralCode("");
+          setReferralExpiry("");
         }
       } finally {
         setSessionLoading(false);
       }
     };
+
     loadSession();
   }, []);
 
@@ -273,9 +294,9 @@ export default function Home() {
         <div className="hero-grid" aria-hidden="true" />
         <div className="hero-glow" aria-hidden="true" />
         <div className="hero-copy">
-         
+
           <h1><span>El punto máximo</span><em>de tu belleza.</em></h1>
-         
+
           <div className="hero-actions">
             <Link className="button" href="/reservar">Reservar cita <b>→</b></Link>
             <Link className="button button-ghost" href="/tienda">Explorar tienda</Link>
