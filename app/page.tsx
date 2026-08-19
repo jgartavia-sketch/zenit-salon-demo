@@ -43,11 +43,27 @@ type PointMovement = {
   created_at: string;
 };
 
-const rewards = [
-  { points: 250, title: "Hidratación express", detail: "Tratamiento rápido de brillo y suavidad.", available: true },
-  { points: 500, title: "Corte de cortesía", detail: "Aplican condiciones según disponibilidad.", available: true },
-  { points: 850, title: "Experiencia Zénit", detail: "Servicio premium seleccionado con el salón.", available: false },
-];
+type ContestCountdown = {
+  days: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+  finished: boolean;
+};
+
+function getContestCountdown(): ContestCountdown {
+  // Costa Rica is UTC-6 year-round. 18 Sep 2026, 1:00 p.m. CR = 19:00 UTC.
+  const target = new Date("2026-09-18T19:00:00.000Z").getTime();
+  const distance = Math.max(0, target - Date.now());
+
+  return {
+    days: Math.floor(distance / (1000 * 60 * 60 * 24)),
+    hours: Math.floor((distance / (1000 * 60 * 60)) % 24),
+    minutes: Math.floor((distance / (1000 * 60)) % 60),
+    seconds: Math.floor((distance / 1000) % 60),
+    finished: distance <= 0,
+  };
+}
 
 export default function Home() {
   const pathname = usePathname();
@@ -75,6 +91,14 @@ export default function Home() {
   const [selectedService, setSelectedService] = useState("Corte y estilismo");
   const [serviceRequestLoading, setServiceRequestLoading] = useState(false);
   const [serviceRequestError, setServiceRequestError] = useState("");
+  const [contestCountdown, setContestCountdown] = useState<ContestCountdown>(() => getContestCountdown());
+
+  useEffect(() => {
+    const updateCountdown = () => setContestCountdown(getContestCountdown());
+    updateCountdown();
+    const timer = window.setInterval(updateCountdown, 1000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const loadSession = async () => {
@@ -361,22 +385,11 @@ export default function Home() {
                         minLength={8}
                         placeholder="Mínimo 8 caracteres"
                       />
-                      <button
-                        type="button"
-                        className="password-toggle"
-                        onClick={() => setShowRegisterPassword((visible) => !visible)}
-                        aria-label={showRegisterPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-                        aria-pressed={showRegisterPassword}
-                      >
+                      <button type="button" className="password-toggle" onClick={() => setShowRegisterPassword((visible) => !visible)} aria-label={showRegisterPassword ? "Ocultar contraseña" : "Mostrar contraseña"} aria-pressed={showRegisterPassword}>
                         {showRegisterPassword ? (
-                          <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M3 3l18 18M10.6 10.7a2 2 0 002.7 2.7M9.9 4.2A10.8 10.8 0 0112 4c5.5 0 9 5.1 9 5.1a15 15 0 01-3.1 3.6M6.2 6.2C4.2 7.5 3 9.1 3 9.1S6.5 15 12 15c1 0 2-.2 2.9-.5" />
-                          </svg>
+                          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M10.6 10.7a2 2 0 002.7 2.7M9.9 4.2A10.8 10.8 0 0112 4c5.5 0 9 5.1 9 5.1a15 15 0 01-3.1 3.6M6.2 6.2C4.2 7.5 3 9.1 3 9.1S6.5 15 12 15c1 0 2-.2 2.9-.5" /></svg>
                         ) : (
-                          <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" />
-                            <circle cx="12" cy="12" r="2.5" />
-                          </svg>
+                          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" /><circle cx="12" cy="12" r="2.5" /></svg>
                         )}
                       </button>
                     </div>
@@ -389,39 +402,20 @@ export default function Home() {
               </>
             ) : (
               <div className="registration-success">
-                <span>✓</span>
-                <p className="eyebrow">Cuenta activa</p>
-                <h3>¡Bienvenido al Club Zénit!</h3>
+                <span>✓</span><p className="eyebrow">Cuenta activa</p><h3>¡Bienvenido al Club Zénit!</h3>
                 <p>{authMessage || "Tu tarjeta digital ya está vinculada de forma segura a tu correo y WhatsApp."}</p>
-                <button className="button" type="button" onClick={logoutCustomer}>
-                  Cerrar sesión
-                </button>
+                <button className="button" type="button" onClick={logoutCustomer}>Cerrar sesión</button>
               </div>
             )}
           </div>
 
           <article className="loyalty-card" aria-label="Vista previa de tarjeta digital">
-            <div className="card-top">
-              <img src="/logo-zenit.png" alt="" />
-              <div><small>Cliente frecuente</small><strong>Club Zénit</strong></div>
-              <span>ACTIVA</span>
-            </div>
-            <div className="customer-data">
-              <small>Cliente</small>
-              <h3>{profile ? profile.name : "Tu nombre aparecerá aquí"}</h3>
-              <p>ID {profile?.customerId || "JAM-2026-0000"}</p>
-            </div>
+            <div className="card-top"><img src="/logo-zenit.png" alt="" /><div><small>Cliente frecuente</small><strong>Club Zénit</strong></div><span>ACTIVA</span></div>
+            <div className="customer-data"><small>Cliente</small><h3>{profile ? profile.name : "Tu nombre aparecerá aquí"}</h3><p>ID {profile?.customerId || "JAM-2026-0000"}</p></div>
             <div className="points-total"><small>Puntos disponibles</small><strong>{totalPoints}</strong><span>pts</span></div>
-            <div className="points-split">
-              <div><small>Por compras y servicios</small><strong>{profile?.purchasePoints || 0} pts</strong></div>
-              <div><small>Por referidos</small><strong>{profile?.referralPoints || 0} pts</strong></div>
-            </div>
+            <div className="points-split"><div><small>Por compras y servicios</small><strong>{profile?.purchasePoints || 0} pts</strong></div><div><small>Por referidos</small><strong>{profile?.referralPoints || 0} pts</strong></div></div>
             <div className="referral-generator">
-              <div>
-                <small>Tu código de referido</small>
-                <strong>{referralCode || "Generá uno cuando lo necesités"}</strong>
-                {referralCode && <span>Vence {new Date(referralExpiry).toLocaleDateString("es-CR")} · Un solo uso</span>}
-              </div>
+              <div><small>Tu código de referido</small><strong>{referralCode || "Generá uno cuando lo necesités"}</strong>{referralCode && <span>Vence {new Date(referralExpiry).toLocaleDateString("es-CR")} · Un solo uso</span>}</div>
               {!referralCode ? (
                 <button onClick={generateReferralCode} disabled={!profile}>{profile ? "Generar código" : "Registrate primero"}</button>
               ) : (
@@ -448,11 +442,7 @@ export default function Home() {
           <p className="eyebrow"><span /> Acceso Club Zénit</p>
           <h2>Tu estilo, tus puntos y tu historial en un solo lugar.</h2>
           <p>Ingresá de forma segura para consultar tu tarjeta digital, tus puntos y la actividad registrada por el salón.</p>
-          <div className="auth-features">
-            <span>✓ Tarjeta digital</span>
-            <span>✓ Recompensas</span>
-            <span>✓ Historial de servicios</span>
-          </div>
+          <div className="auth-features"><span>✓ Tarjeta digital</span><span>✓ Recompensas</span><span>✓ Historial de servicios</span></div>
         </div>
         <div className="auth-panel">
           <div className="panel-title"><span>→</span><div><small>Cliente registrado</small><h3>Ingresar</h3></div></div>
@@ -461,29 +451,12 @@ export default function Home() {
             <label>
               Contraseña
               <div className="password-field">
-                <input
-                  name="password"
-                  type={showLoginPassword ? "text" : "password"}
-                  required
-                  minLength={6}
-                  placeholder="••••••••"
-                />
-                <button
-                  type="button"
-                  className="password-toggle"
-                  onClick={() => setShowLoginPassword((visible) => !visible)}
-                  aria-label={showLoginPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-                  aria-pressed={showLoginPassword}
-                >
+                <input name="password" type={showLoginPassword ? "text" : "password"} required minLength={6} placeholder="••••••••" />
+                <button type="button" className="password-toggle" onClick={() => setShowLoginPassword((visible) => !visible)} aria-label={showLoginPassword ? "Ocultar contraseña" : "Mostrar contraseña"} aria-pressed={showLoginPassword}>
                   {showLoginPassword ? (
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M3 3l18 18M10.6 10.7a2 2 0 002.7 2.7M9.9 4.2A10.8 10.8 0 0112 4c5.5 0 9 5.1 9 5.1a15 15 0 01-3.1 3.6M6.2 6.2C4.2 7.5 3 9.1 3 9.1S6.5 15 12 15c1 0 2-.2 2.9-.5" />
-                    </svg>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M10.6 10.7a2 2 0 002.7 2.7M9.9 4.2A10.8 10.8 0 0112 4c5.5 0 9 5.1 9 5.1a15 15 0 01-3.1 3.6M6.2 6.2C4.2 7.5 3 9.1 3 9.1S6.5 15 12 15c1 0 2-.2 2.9-.5" /></svg>
                   ) : (
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" />
-                      <circle cx="12" cy="12" r="2.5" />
-                    </svg>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" /><circle cx="12" cy="12" r="2.5" /></svg>
                   )}
                 </button>
               </div>
@@ -519,17 +492,51 @@ export default function Home() {
               </article>
               <div className="account-summary">
                 <article><small>Referidos activos</small><strong>{profile.referrals}</strong><p>Personas registradas con tus códigos.</p></article>
-                <article><small>Próxima recompensa</small><strong>{Math.max(0, 850 - totalPoints)} pts</strong><p>Para desbloquear Experiencia Zénit.</p></article>
-                <article><small>Última visita</small><strong>18 JUL</strong><p>Servicio premium.</p></article>
+                <article><small>Próxima recompensa</small><strong>—</strong><p>Disponible próximamente.</p></article>
+                <article><small>Última visita</small><strong>—</strong><p>Sin visitas registradas.</p></article>
               </div>
             </div>
 
-            <div className="account-section">
-              <div className="subheading"><div><p className="eyebrow"><span /> Beneficios</p><h3>Recompensas disponibles</h3></div><p>Los puntos se descuentan únicamente cuando el beneficio es confirmado por el salón.</p></div>
-              <div className="reward-grid">{rewards.map((reward) => {
-                const unlocked = totalPoints >= reward.points;
-                return <article className={unlocked ? "reward-card unlocked" : "reward-card"} key={reward.title}><span>{reward.points} pts</span><h4>{reward.title}</h4><p>{reward.detail}</p><button disabled={!unlocked}>{unlocked ? "Canjear beneficio" : `Te faltan ${reward.points - totalPoints} pts`}</button></article>;
-              })}</div>
+            <div className="account-section contest-section">
+              <div className="subheading">
+                <div>
+                  <p className="eyebrow"><span /> Concurso activo · Club Zénit</p>
+                  <h3>Tu registro puede llevarte a ganar.</h3>
+                </div>
+                <p>La rifa se realizará el viernes 18 de septiembre de 2026 a la 1:00 p. m. entre las personas registradas en el Club Zénit.</p>
+              </div>
+
+              <div className="contest-panel">
+                <div className="contest-copy">
+                  <small>PREMIO ESPECIAL</small>
+                  <strong>50% DE DESCUENTO</strong>
+                  <p>La persona ganadora podrá elegir uno de los siguientes servicios:</p>
+                  <ul>
+                    <li>Tratamiento de aminoácidos + corte</li>
+                    <li>Velo de brillo + corte</li>
+                    <li>Botox capilar + corte</li>
+                  </ul>
+                  <p className="contest-live">El sorteo se transmitirá en vivo por el Facebook oficial de Zénit Salón.</p>
+                </div>
+
+                <div className="contest-countdown" aria-live="polite">
+                  <small>{contestCountdown.finished ? "SORTEO" : "CUENTA REGRESIVA"}</small>
+                  {contestCountdown.finished ? (
+                    <div className="contest-today">
+                      <strong>¡ES HOY!</strong>
+                      <span>Seguí la transmisión oficial en Facebook Live.</span>
+                    </div>
+                  ) : (
+                    <div className="countdown-grid">
+                      <div><strong>{String(contestCountdown.days).padStart(2, "0")}</strong><span>DÍAS</span></div>
+                      <div><strong>{String(contestCountdown.hours).padStart(2, "0")}</strong><span>HORAS</span></div>
+                      <div><strong>{String(contestCountdown.minutes).padStart(2, "0")}</strong><span>MIN</span></div>
+                      <div><strong>{String(contestCountdown.seconds).padStart(2, "0")}</strong><span>SEG</span></div>
+                    </div>
+                  )}
+                  <p>Viernes 18 de septiembre · 1:00 p. m. · Costa Rica</p>
+                </div>
+              </div>
             </div>
 
             <div className="account-columns">
@@ -558,9 +565,7 @@ export default function Home() {
 
       {isServices && <section className="section services page-section" id="servicios">
         <div className="process-inside">
-          <div className="section-heading centered">
-            <div><p className="eyebrow"><span /> Cómo funciona</p><h2>Así de fácil elevamos tu estilo.</h2></div>
-          </div>
+          <div className="section-heading centered"><div><p className="eyebrow"><span /> Cómo funciona</p><h2>Así de fácil elevamos tu estilo.</h2></div></div>
           <div className="process-grid">
             {[
               ["01", "Elegí", "Seleccioná el servicio que mejor acompaña tu estilo."],
@@ -579,38 +584,24 @@ export default function Home() {
         <div className="service-grid">
           {services.map((service) => (
             <article className="service-card" key={service.title}>
-              <span className="service-icon">{service.icon}</span>
-              <h3>{service.title}</h3>
-              <p>{service.text}</p>
+              <span className="service-icon">{service.icon}</span><h3>{service.title}</h3><p>{service.text}</p>
               <ul>{service.specialties.map((specialty) => <li key={specialty}>{specialty}</li>)}</ul>
-              <button type="button" onClick={() => {
-                setSelectedService(service.title);
-                document.getElementById("solicitar-servicio")?.scrollIntoView({ behavior: "smooth" });
-              }}>Solicitar servicio <b>↗</b></button>
+              <button type="button" onClick={() => { setSelectedService(service.title); document.getElementById("solicitar-servicio")?.scrollIntoView({ behavior: "smooth" }); }}>Solicitar servicio <b>↗</b></button>
             </article>
           ))}
         </div>
 
         <article className="service-request-panel" id="solicitar-servicio">
           <div className="service-request-copy">
-            <p className="eyebrow"><span /> Solicitud registrada</p>
-            <h3>Contanos cómo querés verte y sentirte.</h3>
+            <p className="eyebrow"><span /> Solicitud registrada</p><h3>Contanos cómo querés verte y sentirte.</h3>
             <p>Guardaremos la solicitud para darle seguimiento desde el panel y luego abriremos WhatsApp para coordinar los detalles.</p>
-            <div className="parts-benefits">
-              <span>✓ Seguimiento interno</span>
-              <span>✓ Atención por WhatsApp</span>
-              <span>✓ Fecha sujeta a confirmación</span>
-            </div>
+            <div className="parts-benefits"><span>✓ Seguimiento interno</span><span>✓ Atención por WhatsApp</span><span>✓ Fecha sujeta a confirmación</span></div>
           </div>
           <form className="service-request-form" onSubmit={requestService}>
             <label>Nombre completo<input name="name" required placeholder="Ej. Carlos Sánchez" /></label>
             <div className="form-row">
               <label>WhatsApp<input name="phone" required inputMode="tel" placeholder="Ej. 7124 6337" /></label>
-              <label>Servicio
-                <select name="service" value={selectedService} onChange={(event) => setSelectedService(event.target.value)} required>
-                  {services.map((service) => <option key={service.title} value={service.title}>{service.title}</option>)}
-                </select>
-              </label>
+              <label>Servicio<select name="service" value={selectedService} onChange={(event) => setSelectedService(event.target.value)} required>{services.map((service) => <option key={service.title} value={service.title}>{service.title}</option>)}</select></label>
             </div>
             <label>Detalles<textarea name="details" required placeholder="Contanos el resultado que buscás o cualquier detalle importante." /></label>
             <div className="form-row">
@@ -629,17 +620,13 @@ export default function Home() {
           <div><p className="eyebrow"><span /> Tienda Zénit</p><h2>Productos profesionales para prolongar tu experiencia.</h2></div>
           <p>Estamos preparando una experiencia más clara para que encontrés lo que tu estilo necesita.</p>
         </div>
-
         <div className="product-grid">
           {[
             ["Shampoo profesional", "Limpieza profunda con acabado suave y brillante."],
             ["Tratamiento reparador", "Nutrición intensiva para cabello seco o procesado."],
             ["Aceite capilar premium", "Brillo, control y protección para el uso diario."],
           ].map(([title, description]) => (
-            <article className="product-card" key={title}>
-              <div className="product-art"><span>✦</span><small>Próximamente</small></div>
-              <div className="product-copy"><h3>{title}</h3><p>{description}</p></div>
-            </article>
+            <article className="product-card" key={title}><div className="product-art"><span>✦</span><small>Próximamente</small></div><div className="product-copy"><h3>{title}</h3><p>{description}</p></div></article>
           ))}
         </div>
         <a className="button shop-all" href="https://wa.me/50671246337?text=Hola%2C%20quiero%20consultar%20por%20productos%20de%20Z%C3%A9nit%20Sal%C3%B3n" target="_blank" rel="noreferrer">Consultar disponibilidad por WhatsApp →</a>
@@ -647,18 +634,12 @@ export default function Home() {
 
       {isAbout && <section className="section about-contact page-section" id="nosotros">
         <div className="about-contact-intro">
-          <div className="about-copy">
-            <p className="eyebrow"><span /> Zénit Salón</p>
-            <h2>El punto máximo de tu belleza.</h2>
-            <p>Un espacio creado para elevar tu imagen con atención personalizada, técnica profesional y una experiencia donde cada detalle cuenta.</p>
-          </div>
+          <div className="about-copy"><p className="eyebrow"><span /> Zénit Salón</p><h2>El punto máximo de tu belleza.</h2><p>Un espacio creado para elevar tu imagen con atención personalizada, técnica profesional y una experiencia donde cada detalle cuenta.</p></div>
           <div className="about-stat"><strong>✦</strong><span>Belleza con propósito</span><small>San Carlos, Costa Rica</small></div>
         </div>
-
         <div className="contact-hub">
           <div className="contact-hub-copy">
-            <p className="eyebrow"><span /> Contacto y ubicación</p>
-            <h3>Estamos listos para ayudarte.</h3>
+            <p className="eyebrow"><span /> Contacto y ubicación</p><h3>Estamos listos para ayudarte.</h3>
             <p>Escribinos, conocé nuestro trabajo en Facebook o abrí la ruta al salón desde tu aplicación favorita.</p>
             <div className="contact-details">
               <a href="https://wa.me/50671246337" target="_blank" rel="noreferrer"><small>Teléfono y WhatsApp</small><strong>+506 7124-6337</strong></a>
@@ -674,24 +655,13 @@ export default function Home() {
       </section>}
 
       <footer>
-        <div className="footer-brand">
-          <img src="/logo-zenit.png" alt="Zénit Salón" />
-        </div>
-
+        <div className="footer-brand"><img src="/logo-zenit.png" alt="Zénit Salón" /></div>
         <div className="footer-contact" aria-label="Información de contacto">
-          <p>
-            <strong>Teléfono y WhatsApp</strong>
-            <span>+506 7124-6337</span>
-          </p>
-          <p>
-            <strong>Ubicación</strong>
-            <span>Dulce Nombre, Calle Sancho, San Carlos</span>
-          </p>
+          <p><strong>Teléfono y WhatsApp</strong><span>+506 7124-6337</span></p>
+          <p><strong>Ubicación</strong><span>Dulce Nombre, Calle Sancho, San Carlos</span></p>
         </div>
-
         <p className="footer-copyright">© 2026 Zénit Salón</p>
       </footer>
-
     </main>
   );
 }
