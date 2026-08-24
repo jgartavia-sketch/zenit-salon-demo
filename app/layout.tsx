@@ -4,8 +4,6 @@ import "./globals.css";
 import "./home-directory.css";
 import "./luxury-theme.css";
 
-const SITE_AVAILABLE = false;
-
 const cormorant = Cormorant_Garamond({
   variable: "--font-zenit-display",
   subsets: ["latin"],
@@ -22,11 +20,11 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "Sitio no disponible",
-  description: "Este sitio no se encuentra disponible actualmente.",
-  robots: {
-    index: false,
-    follow: false,
+  title: "Zénit Salón | El punto máximo de tu belleza",
+  description:
+    "Salón de belleza, barbería y estética en Dulce Nombre, Calle Sancho, San Carlos.",
+  other: {
+    "codex-preview": "development",
   },
   icons: {
     icon: "/favicon.png",
@@ -45,38 +43,7 @@ export default function RootLayout({
       <body
         className={`${cormorant.variable} ${manrope.variable} antialiased`}
       >
-        {SITE_AVAILABLE ? (
-          children
-        ) : (
-          <main
-            style={{
-              position: "fixed",
-              inset: 0,
-              zIndex: 999999,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: "100%",
-              minHeight: "100vh",
-              margin: 0,
-              padding: "24px",
-              background: "#ffffff",
-              color: "#111111",
-              fontFamily: "Arial, sans-serif",
-              textAlign: "center",
-            }}
-          >
-            <h1
-              style={{
-                margin: 0,
-                fontSize: "clamp(24px, 5vw, 42px)",
-                fontWeight: 500,
-              }}
-            >
-              Sitio no disponible
-            </h1>
-          </main>
-        )}
+        {children}
       </body>
     </html>
   );
