@@ -2,6 +2,7 @@
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
+import responsive from "./admin.module.css";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/$/, "");
 const ADMIN_SESSION_KEY = "zenit_admin_key";
@@ -58,6 +59,17 @@ type CategoryForm = {
   active: boolean;
 };
 
+type Customer = {
+  id: string;
+  customerId: string;
+  name: string;
+  email: string;
+  phone: string;
+  purchasePoints: number;
+  referralPoints: number;
+  totalPoints: number;
+};
+
 const emptyProductForm: ProductForm = {
   name: "",
   brand: "",
@@ -88,6 +100,7 @@ function formatColones(value: number) {
 }
 
 export default function AdminPage() {
+  const [activeSection, setActiveSection] = useState<"catalog" | "points">("catalog");
   const [adminKey, setAdminKey] = useState("");
   const [authenticated, setAuthenticated] = useState(false);
   const [checking, setChecking] = useState(true);
@@ -108,6 +121,12 @@ export default function AdminPage() {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [categoryForm, setCategoryForm] = useState<CategoryForm>(emptyCategoryForm);
+  const [customerQuery, setCustomerQuery] = useState("");
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [customerLoading, setCustomerLoading] = useState(false);
+  const [amountColones, setAmountColones] = useState("");
+  const [pointDescription, setPointDescription] = useState("Compra o servicio confirmado");
 
   const headers = (key = adminKey) => ({
     "Content-Type": "application/json",
@@ -226,6 +245,88 @@ export default function AdminPage() {
         .includes(query),
     );
   }, [products, search]);
+
+  const pointsPreview = useMemo(
+    () => Math.floor(Math.max(0, Number(amountColones) || 0) / 100),
+    [amountColones],
+  );
+
+  const searchCustomers = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const query = customerQuery.trim();
+
+    if (!query) {
+      setActionError("Escribí el nombre, correo, WhatsApp o código del cliente.");
+      return;
+    }
+
+    setCustomerLoading(true);
+    setActionError("");
+    setMessage("");
+    setSelectedCustomer(null);
+
+    try {
+      const response = await fetch(
+        `${API_URL}/api/admin/customers?q=${encodeURIComponent(query)}`,
+        { cache: "no-store", headers: { "x-admin-key": adminKey } },
+      );
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "No se pudieron buscar los clientes.");
+      }
+
+      setCustomers(result.customers || []);
+      if (!(result.customers || []).length) {
+        setMessage("No encontramos clientes con esos datos.");
+      }
+    } catch (error) {
+      setCustomers([]);
+      setActionError(error instanceof Error ? error.message : "No se pudieron buscar los clientes.");
+    } finally {
+      setCustomerLoading(false);
+    }
+  };
+
+  const awardPoints = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!selectedCustomer) return;
+
+    setCustomerLoading(true);
+    setActionError("");
+    setMessage("");
+
+    try {
+      const response = await fetch(`${API_URL}/api/admin/points/purchase`, {
+        method: "POST",
+        headers: headers(),
+        body: JSON.stringify({
+          email: selectedCustomer.email,
+          amountColones: Number(amountColones),
+          description: pointDescription.trim(),
+        }),
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "No se pudieron acreditar los puntos.");
+      }
+
+      const updatedCustomer = result.customer as Customer;
+      setSelectedCustomer(updatedCustomer);
+      setCustomers((current) =>
+        current.map((customer) =>
+          customer.id === updatedCustomer.id ? updatedCustomer : customer,
+        ),
+      );
+      setAmountColones("");
+      setMessage(`Listo: se agregaron ${result.points} puntos a ${updatedCustomer.name}.`);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "No se pudieron acreditar los puntos.");
+    } finally {
+      setCustomerLoading(false);
+    }
+  };
 
   const openCreateProduct = () => {
     setEditingProduct(null);
@@ -589,8 +690,8 @@ export default function AdminPage() {
   }
 
   return (
-    <main style={styles.adminPage}>
-      <header style={styles.topbar}>
+    <main style={styles.adminPage} className={responsive.adminPage}>
+      <header style={styles.topbar} className={responsive.topbar}>
         <div style={styles.brandWrap}>
           <img src="/logo-zenit.png" alt="Zénit Salón" style={styles.brandLogo} />
           <div>
@@ -599,7 +700,7 @@ export default function AdminPage() {
           </div>
         </div>
 
-        <div style={styles.topbarActions}>
+        <div style={styles.topbarActions} className={responsive.topbarActions}>
           <a href="/tienda" target="_blank" style={styles.secondaryButton}>
             Ver tienda
           </a>
@@ -613,12 +714,143 @@ export default function AdminPage() {
         <div style={styles.headingRow}>
           <div>
             <p style={styles.eyebrow}>Administración comercial</p>
-            <h1 style={styles.pageTitle}>Gestioná la tienda sin tocar código.</h1>
+            <h1 style={styles.pageTitle}>Gestioná Zénit desde un solo lugar.</h1>
             <p style={styles.pageLead}>
-              Productos, stock, disponibilidad, imágenes y categorías desde un solo panel.
+              Administrá el catálogo y acreditá puntos a clientes desde secciones independientes.
             </p>
           </div>
         </div>
+
+        <nav className={responsive.sectionNav} aria-label="Secciones administrativas">
+          <button
+            type="button"
+            className={`${responsive.navButton} ${activeSection === "catalog" ? responsive.navButtonActive : ""}`}
+            onClick={() => setActiveSection("catalog")}
+          >
+            Productos y categorías
+          </button>
+          <button
+            type="button"
+            className={`${responsive.navButton} ${activeSection === "points" ? responsive.navButtonActive : ""}`}
+            onClick={() => setActiveSection("points")}
+          >
+            Agregar puntos
+          </button>
+        </nav>
+
+        {activeSection === "points" && (
+          <section className={responsive.pointsPanel}>
+            <div>
+              <p style={styles.eyebrow}>Club Zénit</p>
+              <h2 style={styles.panelTitle}>Acreditar puntos</h2>
+              <p style={styles.pageLead}>
+                Buscá al cliente, verificá sus datos y registrá el monto de la compra o servicio.
+                Cada ₡100 confirmados equivalen a 1 punto.
+              </p>
+            </div>
+
+            <form className={responsive.searchForm} onSubmit={searchCustomers}>
+              <input
+                value={customerQuery}
+                onChange={(event) => setCustomerQuery(event.target.value)}
+                placeholder="Nombre, correo, WhatsApp o código de cliente…"
+                aria-label="Buscar cliente"
+                style={styles.searchInput}
+              />
+              <button type="submit" style={styles.primaryButton} disabled={customerLoading}>
+                {customerLoading ? "Buscando…" : "Buscar cliente"}
+              </button>
+            </form>
+
+            {(message || actionError) && (
+              <div style={actionError ? styles.alertError : styles.alertSuccess}>
+                {actionError || message}
+              </div>
+            )}
+
+            {customers.length > 0 && (
+              <div className={responsive.customerGrid}>
+                {customers.map((customer) => (
+                  <button
+                    type="button"
+                    key={customer.id}
+                    className={`${responsive.customerCard} ${selectedCustomer?.id === customer.id ? responsive.customerCardSelected : ""}`}
+                    onClick={() => {
+                      setSelectedCustomer(customer);
+                      setMessage("");
+                      setActionError("");
+                    }}
+                  >
+                    <small>{customer.customerId}</small>
+                    <strong>{customer.name}</strong>
+                    <span>{customer.email}</span>
+                    <span>{customer.phone}</span>
+                    <span>{customer.totalPoints} puntos disponibles</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {selectedCustomer && (
+              <div className={responsive.awardLayout}>
+                <article className={responsive.summaryCard}>
+                  <small style={styles.metricLabel}>Cliente seleccionado</small>
+                  <h3>{selectedCustomer.name}</h3>
+                  <p>{selectedCustomer.customerId}</p>
+                  <p>{selectedCustomer.email}</p>
+                  <p>{selectedCustomer.phone}</p>
+                  <strong className={responsive.pointsTotal}>{selectedCustomer.totalPoints}</strong>
+                  <small style={styles.metricLabel}>Puntos disponibles</small>
+                </article>
+
+                <form className={responsive.awardForm} onSubmit={awardPoints}>
+                  <label style={styles.label}>
+                    Monto pagado en colones
+                    <input
+                      required
+                      type="number"
+                      min="100"
+                      step="100"
+                      inputMode="numeric"
+                      value={amountColones}
+                      onChange={(event) => setAmountColones(event.target.value)}
+                      placeholder="Ejemplo: 10000"
+                      style={styles.input}
+                    />
+                  </label>
+
+                  <label style={styles.label}>
+                    Descripción
+                    <input
+                      required
+                      minLength={3}
+                      maxLength={200}
+                      value={pointDescription}
+                      onChange={(event) => setPointDescription(event.target.value)}
+                      placeholder="Compra o servicio confirmado"
+                      style={styles.input}
+                    />
+                  </label>
+
+                  <div className={responsive.preview}>
+                    <span>Puntos que se acreditarán</span>
+                    <strong>+{pointsPreview} pts</strong>
+                  </div>
+
+                  <button
+                    type="submit"
+                    style={styles.primaryButton}
+                    disabled={customerLoading || pointsPreview <= 0}
+                  >
+                    {customerLoading ? "Guardando…" : `Confirmar +${pointsPreview} puntos`}
+                  </button>
+                </form>
+              </div>
+            )}
+          </section>
+        )}
+
+        <div hidden={activeSection !== "catalog"}>
 
         <div style={styles.metricsGrid}>
           <article style={styles.metricCard}>
@@ -1048,6 +1280,7 @@ export default function AdminPage() {
             </div>
           )}
         </section>
+        </div>
       </section>
     </main>
   );
