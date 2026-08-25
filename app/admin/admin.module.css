@@ -4,6 +4,9 @@
 }
 
 .sectionNav {
+  position: static;
+  inset: auto;
+  z-index: auto;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
@@ -157,6 +160,13 @@
   .searchForm,
   .awardLayout {
     grid-template-columns: 1fr;
+  }
+
+  .sectionNav {
+    position: static !important;
+    inset: auto !important;
+    z-index: auto !important;
+    width: auto;
   }
 
   .searchForm button,
