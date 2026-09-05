@@ -1,1570 +1,667 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
-import type { CSSProperties } from "react";
-import responsive from "./admin.module.css";
+// Versión corregida: logo oficial en Tienda y hero optimizado para móvil.
+
+import { useEffect, useMemo, useState } from "react";
+import type { FormEvent } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/$/, "");
-const ADMIN_SESSION_KEY = "zenit_admin_key";
+const TOKEN_KEY = "zenit_token";
 
-type Category = {
-  id: string;
-  slug: string;
-  name: string;
-  description?: string | null;
-  sortOrder: number;
-  active: boolean;
-  productCount?: number;
-};
-
-type Product = {
-  id: string;
-  slug: string;
-  sku?: string | null;
-  name: string;
-  brand: string;
-  description: string;
-  price: number;
-  imageUrl: string;
-  stock?: number | null;
-  available: boolean;
-  active: boolean;
-  sortOrder: number;
-  categoryId: string;
-  category?: {
-    id: string;
-    slug: string;
-    name: string;
-  } | null;
-};
-
-type ProductForm = {
-  name: string;
-  brand: string;
-  description: string;
-  price: string;
-  imageUrl: string;
-  stock: string;
-  sku: string;
-  categoryId: string;
-  available: boolean;
-  active: boolean;
-  sortOrder: string;
-};
-
-type CategoryForm = {
-  name: string;
-  description: string;
-  sortOrder: string;
-  active: boolean;
-};
-
-type Customer = {
-  id: string;
-  customerId: string;
-  name: string;
-  email: string;
-  phone: string;
-  purchasePoints: number;
-  referralPoints: number;
-  totalPoints: number;
-};
-
-type CustomerForm = {
-  name: string;
-  email: string;
-  phone: string;
-  purchasePoints: string;
-  referralPoints: string;
-};
-
-const emptyProductForm: ProductForm = {
-  name: "",
-  brand: "",
-  description: "",
-  price: "",
-  imageUrl: "",
-  stock: "",
-  sku: "",
-  categoryId: "",
-  available: true,
-  active: true,
-  sortOrder: "0",
-};
-
-const emptyCategoryForm: CategoryForm = {
-  name: "",
-  description: "",
-  sortOrder: "0",
-  active: true,
-};
-
-function formatColones(value: number) {
-  return new Intl.NumberFormat("es-CR", {
-    style: "currency",
-    currency: "CRC",
-    maximumFractionDigits: 0,
-  }).format(value);
+function authHeaders(): Record<string, string> {
+  const token = typeof window === "undefined" ? "" : localStorage.getItem(TOKEN_KEY);
+  return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-export default function AdminPage() {
-  const [activeSection, setActiveSection] = useState<"catalog" | "customers" | "points">("catalog");
-  const [adminKey, setAdminKey] = useState("");
-  const [authenticated, setAuthenticated] = useState(false);
-  const [checking, setChecking] = useState(true);
-  const [loginError, setLoginError] = useState("");
+const services = [
+  { icon: "✦", title: "Corte y estilismo", text: "Diseño personalizado para realzar tu imagen.", specialties: ["Corte femenino", "Corte masculino", "Peinado y acabado"] },
+  { icon: "◈", title: "Coloración profesional", text: "Color, dimensión y brillo con diagnóstico previo.", specialties: ["Color completo", "Mechas y balayage", "Corrección de color"] },
+  { icon: "◇", title: "Barbería premium", text: "Precisión, estilo y cuidado en cada detalle.", specialties: ["Corte", "Barba", "Perfilado"] },
+  { icon: "≈", title: "Tratamientos capilares", text: "Recuperación y nutrición según las necesidades de tu cabello.", specialties: ["Hidratación", "Reparación", "Control de frizz"] },
+  { icon: "○", title: "Uñas y estética", text: "Detalles impecables para manos, pies y belleza integral.", specialties: ["Manicure", "Pedicure", "Diseños personalizados"] },
+  { icon: "❋", title: "Spa y bienestar", text: "Una pausa para renovar tu imagen y tu energía.", specialties: ["Cuidado facial", "Relajación", "Paquetes especiales"] },
+];
 
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const [actionError, setActionError] = useState("");
-  const [message, setMessage] = useState("");
+type CustomerProfile = {
+  name: string;
+  email: string;
+  phone: string;
+  customerId: string;
+  purchasePoints: number;
+  referralPoints: number;
+  referrals: number;
+};
 
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [showProductForm, setShowProductForm] = useState(false);
-  const [productForm, setProductForm] = useState<ProductForm>(emptyProductForm);
+type PointMovement = {
+  id: string;
+  kind: string;
+  points: number;
+  amount_colones: number | null;
+  description: string;
+  created_at: string;
+};
 
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [showCategoryForm, setShowCategoryForm] = useState(false);
-  const [categoryForm, setCategoryForm] = useState<CategoryForm>(emptyCategoryForm);
-  const [customerQuery, setCustomerQuery] = useState("");
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [customerLoading, setCustomerLoading] = useState(false);
-  const [amountColones, setAmountColones] = useState("");
-  const [pointDescription, setPointDescription] = useState("Compra o servicio confirmado");
-  const [customerPage, setCustomerPage] = useState(1);
-  const [customerTotal, setCustomerTotal] = useState(0);
-  const [customerTotalPages, setCustomerTotalPages] = useState(1);
-  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
-  const [customerForm, setCustomerForm] = useState<CustomerForm | null>(null);
+type ContestCountdown = {
+  days: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+  finished: boolean;
+};
 
-  const headers = (key = adminKey) => ({
-    "Content-Type": "application/json",
-    "x-admin-key": key,
-  });
+function getContestCountdown(): ContestCountdown {
+  // Costa Rica is UTC-6 year-round. 18 Sep 2026, 1:00 p.m. CR = 19:00 UTC.
+  const target = new Date("2026-09-18T19:00:00.000Z").getTime();
+  const distance = Math.max(0, target - Date.now());
 
-  const loadAdminData = async (key = adminKey) => {
-    setLoading(true);
-    setActionError("");
-
-    try {
-      const [productsResponse, categoriesResponse] = await Promise.all([
-        fetch(`${API_URL}/api/admin/products`, {
-          cache: "no-store",
-          headers: { "x-admin-key": key },
-        }),
-        fetch(`${API_URL}/api/admin/product-categories`, {
-          cache: "no-store",
-          headers: { "x-admin-key": key },
-        }),
-      ]);
-
-      if (productsResponse.status === 401 || categoriesResponse.status === 401) {
-        throw new Error("Clave administrativa incorrecta.");
-      }
-
-      const productsData = await productsResponse.json();
-      const categoriesData = await categoriesResponse.json();
-
-      if (!productsResponse.ok) {
-        throw new Error(productsData.error || "No se pudieron cargar los productos.");
-      }
-
-      if (!categoriesResponse.ok) {
-        throw new Error(categoriesData.error || "No se pudieron cargar las categorías.");
-      }
-
-      setProducts(productsData.products || []);
-      setCategories(categoriesData.categories || []);
-      return true;
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : "No se pudo abrir el panel.");
-      return false;
-    } finally {
-      setLoading(false);
-      setChecking(false);
-    }
+  return {
+    days: Math.floor(distance / (1000 * 60 * 60 * 24)),
+    hours: Math.floor((distance / (1000 * 60 * 60)) % 24),
+    minutes: Math.floor((distance / (1000 * 60)) % 60),
+    seconds: Math.floor((distance / 1000) % 60),
+    finished: distance <= 0,
   };
+}
+
+export default function Home() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const isHome = pathname === "/";
+  const isRegistration = pathname === "/registro";
+  const isServices = pathname === "/servicios";
+  const isShop = pathname === "/tienda";
+  const isAbout = pathname === "/nosotros" || pathname === "/contacto";
+  const isReserve = pathname === "/reservar";
+  const isLogin = pathname === "/login";
+  const isAccount = pathname === "/mi-cuenta";
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [profile, setProfile] = useState<CustomerProfile | null>(null);
+  const [authMessage, setAuthMessage] = useState("");
+  const [authError, setAuthError] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
+  const [sessionLoading, setSessionLoading] = useState(true);
+  const [movements, setMovements] = useState<PointMovement[]>([]);
+  const [referralCode, setReferralCode] = useState("");
+  const [referralExpiry, setReferralExpiry] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [selectedService, setSelectedService] = useState("Corte y estilismo");
+  const [serviceRequestLoading, setServiceRequestLoading] = useState(false);
+  const [serviceRequestError, setServiceRequestError] = useState("");
+  const [contestCountdown, setContestCountdown] = useState<ContestCountdown>(() => getContestCountdown());
 
   useEffect(() => {
-    const savedKey = sessionStorage.getItem(ADMIN_SESSION_KEY);
-
-    if (!savedKey) {
-      setChecking(false);
-      return;
-    }
-
-    setAdminKey(savedKey);
-
-    loadAdminData(savedKey).then((ok) => {
-      if (ok) {
-        setAuthenticated(true);
-      } else {
-        sessionStorage.removeItem(ADMIN_SESSION_KEY);
-      }
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const updateCountdown = () => setContestCountdown(getContestCountdown());
+    updateCountdown();
+    const timer = window.setInterval(updateCountdown, 1000);
+    return () => window.clearInterval(timer);
   }, []);
 
-  const login = async (event: FormEvent<HTMLFormElement>) => {
+  useEffect(() => {
+    const loadSession = async () => {
+      const token =
+        typeof window === "undefined"
+          ? null
+          : localStorage.getItem(TOKEN_KEY);
+
+      if (!token) {
+        setSessionLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_URL}/api/auth/me`, {
+          cache: "no-store",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setProfile(data.customer);
+          setMovements(data.movements || []);
+
+          if (data.referral) {
+            setReferralCode(data.referral.code);
+            setReferralExpiry(data.referral.expiry);
+          }
+        } else if (response.status === 401) {
+          localStorage.removeItem(TOKEN_KEY);
+          setProfile(null);
+          setMovements([]);
+          setReferralCode("");
+          setReferralExpiry("");
+        }
+      } finally {
+        setSessionLoading(false);
+      }
+    };
+
+    loadSession();
+  }, []);
+
+  const requestService = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setLoginError("");
-    setActionError("");
+    setServiceRequestLoading(true);
+    setServiceRequestError("");
 
-    const key = adminKey.trim();
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    const payload = {
+      name: String(data.get("name") || ""),
+      phone: String(data.get("phone") || ""),
+      service: String(data.get("service") || ""),
+      details: String(data.get("details") || ""),
+      preferredDate: String(data.get("preferredDate") || ""),
+      preferredTime: String(data.get("preferredTime") || ""),
+    };
 
-    if (!key) {
-      setLoginError("Ingresá la clave administrativa.");
-      return;
+    try {
+      const response = await fetch(`${API_URL}/api/service-requests`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "No pudimos registrar la solicitud.");
+
+      const message = [
+        "Hola, Zénit Salón. Quiero solicitar un servicio:",
+        "",
+        `Solicitud: ${result.request.id}`,
+        `Nombre: ${payload.name}`,
+        `WhatsApp: ${payload.phone}`,
+        `Servicio: ${payload.service}`,
+        `Detalles: ${payload.details}`,
+        `Fecha preferida: ${payload.preferredDate || "Por coordinar"}`,
+        `Hora preferida: ${payload.preferredTime || "Por coordinar"}`,
+        "",
+        "Entiendo que la fecha debe ser confirmada por el salón.",
+      ].join("\n");
+
+      window.open(`https://wa.me/50671246337?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
+      form.reset();
+      setSelectedService("Corte y estilismo");
+    } catch (error) {
+      setServiceRequestError(error instanceof Error ? error.message : "No pudimos registrar la solicitud.");
+    } finally {
+      setServiceRequestLoading(false);
     }
-
-    const ok = await loadAdminData(key);
-
-    if (!ok) {
-      setLoginError("No se pudo validar la clave administrativa.");
-      return;
-    }
-
-    sessionStorage.setItem(ADMIN_SESSION_KEY, key);
-    setAuthenticated(true);
   };
 
-  const logout = () => {
-    sessionStorage.removeItem(ADMIN_SESSION_KEY);
-    setAdminKey("");
-    setAuthenticated(false);
-    setProducts([]);
-    setCategories([]);
-    setShowProductForm(false);
-    setShowCategoryForm(false);
-    setEditingProduct(null);
-    setEditingCategory(null);
-    setMessage("");
-    setActionError("");
+  const registerCustomer = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setAuthLoading(true);
+    setAuthError("");
+    const data = new FormData(event.currentTarget);
+    try {
+      const response = await fetch(`${API_URL}/api/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: data.get("name"),
+          email: data.get("email"),
+          phone: data.get("phone"),
+          password: data.get("password"),
+          referral: data.get("referral"),
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "No pudimos crear la cuenta.");
+      localStorage.setItem(TOKEN_KEY, result.token);
+      setProfile(result.customer);
+      setAuthMessage("Tu cuenta está activa. El correo de bienvenida está en proceso.");
+      router.replace("/mi-cuenta");
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : "No pudimos crear la cuenta.");
+    } finally {
+      setAuthLoading(false);
+    }
   };
 
-  const filteredProducts = useMemo(() => {
-    const query = search.trim().toLowerCase();
+  const generateReferralCode = async () => {
+    setAuthError("");
+    const response = await fetch(`${API_URL}/api/referrals`, {
+      method: "POST",
+      headers: authHeaders(),
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      setAuthError(result.error || "No pudimos generar el código.");
+      return;
+    }
+    setReferralCode(result.code);
+    setReferralExpiry(result.expiry);
+    setCopied(false);
+  };
 
-    if (!query) return products;
+  const copyReferralCode = async () => {
+    if (!referralCode) return;
+    await navigator.clipboard?.writeText(referralCode);
+    setCopied(true);
+  };
 
-    return products.filter((product) =>
-      [product.name, product.brand, product.sku || "", product.category?.name || ""]
-        .join(" ")
-        .toLowerCase()
-        .includes(query),
-    );
-  }, [products, search]);
+  const loginCustomer = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setAuthLoading(true);
+    setAuthError("");
+    setAuthMessage("");
+    const data = new FormData(event.currentTarget);
+    try {
+      const response = await fetch(`${API_URL}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: data.get("email"), password: data.get("password") }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "No pudimos iniciar sesión.");
+      localStorage.setItem(TOKEN_KEY, result.token);
+      setProfile(result.customer);
+      setAuthMessage("Sesión iniciada correctamente.");
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : "No pudimos iniciar sesión.");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
 
-  const pointsPreview = useMemo(
-    () => Math.floor(Math.max(0, Number(amountColones) || 0) / 100),
-    [amountColones],
+  const logoutCustomer = async () => {
+    localStorage.removeItem(TOKEN_KEY);
+    setProfile(null);
+    setMovements([]);
+    setReferralCode("");
+    setReferralExpiry("");
+    setAuthMessage("");
+  };
+
+  const totalPoints = useMemo(
+    () => (profile?.purchasePoints || 0) + (profile?.referralPoints || 0),
+    [profile],
   );
 
-  const loadCustomers = async (page = 1, query = customerQuery.trim()) => {
-    setCustomerLoading(true);
-    setActionError("");
-    setMessage("");
-
-    try {
-      const response = await fetch(
-        `${API_URL}/api/admin/customers?q=${encodeURIComponent(query)}&page=${page}&pageSize=50`,
-        { cache: "no-store", headers: { "x-admin-key": adminKey } },
-      );
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "No se pudieron buscar los clientes.");
-      }
-
-      setCustomers(result.customers || []);
-      setCustomerPage(result.pagination?.page || 1);
-      setCustomerTotal(result.pagination?.total || 0);
-      setCustomerTotalPages(result.pagination?.totalPages || 1);
-      if (!(result.customers || []).length) {
-        setMessage("No encontramos clientes con esos datos.");
-      }
-    } catch (error) {
-      setCustomers([]);
-      setActionError(error instanceof Error ? error.message : "No se pudieron buscar los clientes.");
-    } finally {
-      setCustomerLoading(false);
-    }
-  };
-
-  const searchCustomers = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setSelectedCustomer(null);
-    await loadCustomers(1);
-  };
-
-  const openEditCustomer = (customer: Customer) => {
-    setEditingCustomer(customer);
-    setCustomerForm({
-      name: customer.name,
-      email: customer.email,
-      phone: customer.phone,
-      purchasePoints: String(customer.purchasePoints),
-      referralPoints: String(customer.referralPoints),
-    });
-    setActionError("");
-    setMessage("");
-  };
-
-  const saveCustomer = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!editingCustomer || !customerForm) return;
-
-    setCustomerLoading(true);
-    setActionError("");
-    setMessage("");
-
-    try {
-      const response = await fetch(`${API_URL}/api/admin/customers/${editingCustomer.id}`, {
-        method: "PATCH",
-        headers: headers(),
-        body: JSON.stringify({
-          ...customerForm,
-          purchasePoints: Number(customerForm.purchasePoints),
-          referralPoints: Number(customerForm.referralPoints),
-        }),
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || "No se pudo actualizar el cliente.");
-
-      const updated = result.customer as Customer;
-      setCustomers((current) => current.map((customer) => customer.id === updated.id ? updated : customer));
-      setSelectedCustomer((current) => current?.id === updated.id ? updated : current);
-      setEditingCustomer(null);
-      setCustomerForm(null);
-      setMessage(`Cliente ${updated.name} actualizado correctamente.`);
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : "No se pudo actualizar el cliente.");
-    } finally {
-      setCustomerLoading(false);
-    }
-  };
-
-  const deleteCustomer = async (customer: Customer) => {
-    const confirmed = window.confirm(
-      `¿Eliminar definitivamente a ${customer.name}? Esta acción también borrará su historial de puntos y no se puede deshacer.`,
-    );
-    if (!confirmed) return;
-
-    setCustomerLoading(true);
-    setActionError("");
-    setMessage("");
-
-    try {
-      const response = await fetch(`${API_URL}/api/admin/customers/${customer.id}`, {
-        method: "DELETE",
-        headers: { "x-admin-key": adminKey },
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || "No se pudo eliminar el cliente.");
-
-      if (selectedCustomer?.id === customer.id) setSelectedCustomer(null);
-      if (editingCustomer?.id === customer.id) {
-        setEditingCustomer(null);
-        setCustomerForm(null);
-      }
-      await loadCustomers(customerPage);
-      setMessage(`Cliente ${customer.name} eliminado.`);
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : "No se pudo eliminar el cliente.");
-    } finally {
-      setCustomerLoading(false);
-    }
-  };
-
-  const awardPoints = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!selectedCustomer) return;
-
-    setCustomerLoading(true);
-    setActionError("");
-    setMessage("");
-
-    try {
-      const response = await fetch(`${API_URL}/api/admin/points/purchase`, {
-        method: "POST",
-        headers: headers(),
-        body: JSON.stringify({
-          email: selectedCustomer.email,
-          amountColones: Number(amountColones),
-          description: pointDescription.trim(),
-        }),
-      });
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "No se pudieron acreditar los puntos.");
-      }
-
-      const updatedCustomer = result.customer as Customer;
-      setSelectedCustomer(updatedCustomer);
-      setCustomers((current) =>
-        current.map((customer) =>
-          customer.id === updatedCustomer.id ? updatedCustomer : customer,
-        ),
-      );
-      setAmountColones("");
-      setMessage(`Listo: se agregaron ${result.points} puntos a ${updatedCustomer.name}.`);
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : "No se pudieron acreditar los puntos.");
-    } finally {
-      setCustomerLoading(false);
-    }
-  };
-
-  const openCreateProduct = () => {
-    setEditingProduct(null);
-    setProductForm({
-      ...emptyProductForm,
-      categoryId: categories.find((category) => category.active)?.id || "",
-    });
-    setMessage("");
-    setActionError("");
-    setShowProductForm(true);
-  };
-
-  const openEditProduct = (product: Product) => {
-    setEditingProduct(product);
-    setProductForm({
-      name: product.name,
-      brand: product.brand,
-      description: product.description,
-      price: String(product.price),
-      imageUrl: product.imageUrl,
-      stock: product.stock === null || product.stock === undefined ? "" : String(product.stock),
-      sku: product.sku || "",
-      categoryId: product.categoryId,
-      available: product.available,
-      active: product.active,
-      sortOrder: String(product.sortOrder ?? 0),
-    });
-    setMessage("");
-    setActionError("");
-    setShowProductForm(true);
-  };
-
-  const closeProductForm = () => {
-    setShowProductForm(false);
-    setEditingProduct(null);
-    setProductForm(emptyProductForm);
-    setActionError("");
-  };
-
-  const handleImageUpload = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-
-    if (!file) return;
-
-    setUploadingImage(true);
-    setActionError("");
-    setMessage("");
-
-    try {
-      const formData = new FormData();
-      formData.append("image", file);
-
-      const response = await fetch(`${API_URL}/api/uploads/product-image`, {
-        method: "POST",
-        headers: {
-          "x-admin-key": adminKey,
-        },
-        body: formData,
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "No se pudo subir la imagen.");
-      }
-
-      setProductForm((current) => ({
-        ...current,
-        imageUrl: result.image?.url || "",
-      }));
-
-      setMessage("Imagen cargada correctamente.");
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : "No se pudo subir la imagen.");
-    } finally {
-      setUploadingImage(false);
-      event.target.value = "";
-    }
-  };
-
-  const submitProduct = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setLoading(true);
-    setActionError("");
-    setMessage("");
-
-    try {
-      if (!productForm.imageUrl.trim()) {
-        throw new Error("Seleccioná y subí una imagen antes de guardar el producto.");
-      }
-
-      const payload = {
-        name: productForm.name.trim(),
-        brand: productForm.brand.trim(),
-        description: productForm.description.trim(),
-        price: Number(productForm.price),
-        imageUrl: productForm.imageUrl.trim(),
-        stock: productForm.stock.trim() === "" ? null : Number(productForm.stock),
-        sku: productForm.sku.trim() || null,
-        categoryId: productForm.categoryId,
-        available: productForm.available,
-        active: productForm.active,
-        sortOrder: Number(productForm.sortOrder || 0),
-      };
-
-      const url = editingProduct
-        ? `${API_URL}/api/admin/products/${editingProduct.id}`
-        : `${API_URL}/api/admin/products`;
-
-      const response = await fetch(url, {
-        method: editingProduct ? "PATCH" : "POST",
-        headers: headers(),
-        body: JSON.stringify(payload),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "No se pudo guardar el producto.");
-      }
-
-      const wasEditing = Boolean(editingProduct);
-      closeProductForm();
-      await loadAdminData();
-      setMessage(wasEditing ? "Producto actualizado correctamente." : "Producto creado correctamente.");
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : "No se pudo guardar el producto.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const deleteProduct = async (product: Product) => {
-    if (!window.confirm(`¿Eliminar "${product.name}"? Esta acción lo borra del catálogo.`)) return;
-
-    setLoading(true);
-    setActionError("");
-    setMessage("");
-
-    try {
-      const response = await fetch(`${API_URL}/api/admin/products/${product.id}`, {
-        method: "DELETE",
-        headers: headers(),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "No se pudo eliminar el producto.");
-      }
-
-      await loadAdminData();
-      setMessage(`"${product.name}" fue eliminado.`);
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : "No se pudo eliminar el producto.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const toggleAvailability = async (product: Product) => {
-    setLoading(true);
-    setActionError("");
-    setMessage("");
-
-    try {
-      const response = await fetch(`${API_URL}/api/admin/products/${product.id}`, {
-        method: "PATCH",
-        headers: headers(),
-        body: JSON.stringify({ available: !product.available }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "No se pudo actualizar la disponibilidad.");
-      }
-
-      await loadAdminData();
-      setMessage(
-        !product.available
-          ? `${product.name} ahora está disponible.`
-          : `${product.name} quedó marcado como agotado.`,
-      );
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : "No se pudo actualizar el producto.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const openCreateCategory = () => {
-    setEditingCategory(null);
-    setCategoryForm(emptyCategoryForm);
-    setMessage("");
-    setActionError("");
-    setShowCategoryForm(true);
-  };
-
-  const openEditCategory = (category: Category) => {
-    setEditingCategory(category);
-    setCategoryForm({
-      name: category.name,
-      description: category.description || "",
-      sortOrder: String(category.sortOrder ?? 0),
-      active: category.active,
-    });
-    setMessage("");
-    setActionError("");
-    setShowCategoryForm(true);
-  };
-
-  const closeCategoryForm = () => {
-    setEditingCategory(null);
-    setCategoryForm(emptyCategoryForm);
-    setShowCategoryForm(false);
-    setActionError("");
-  };
-
-  const submitCategory = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setLoading(true);
-    setActionError("");
-    setMessage("");
-
-    try {
-      const payload = {
-        name: categoryForm.name.trim(),
-        description: categoryForm.description.trim() || null,
-        sortOrder: Number(categoryForm.sortOrder || 0),
-        active: categoryForm.active,
-      };
-
-      const url = editingCategory
-        ? `${API_URL}/api/admin/product-categories/${editingCategory.id}`
-        : `${API_URL}/api/admin/product-categories`;
-
-      const response = await fetch(url, {
-        method: editingCategory ? "PATCH" : "POST",
-        headers: headers(),
-        body: JSON.stringify(payload),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "No se pudo guardar la categoría.");
-      }
-
-      const wasEditing = Boolean(editingCategory);
-      closeCategoryForm();
-      await loadAdminData();
-      setMessage(wasEditing ? "Categoría actualizada correctamente." : "Categoría creada correctamente.");
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : "No se pudo guardar la categoría.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const toggleCategory = async (category: Category) => {
-    setLoading(true);
-    setActionError("");
-    setMessage("");
-
-    try {
-      const response = await fetch(`${API_URL}/api/admin/product-categories/${category.id}`, {
-        method: "PATCH",
-        headers: headers(),
-        body: JSON.stringify({ active: !category.active }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "No se pudo actualizar la categoría.");
-      }
-
-      await loadAdminData();
-      setMessage(category.active ? "Categoría desactivada." : "Categoría activada.");
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : "No se pudo actualizar la categoría.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const deleteCategory = async (category: Category) => {
-    if (!window.confirm(`¿Eliminar la categoría "${category.name}"?`)) return;
-
-    setLoading(true);
-    setActionError("");
-    setMessage("");
-
-    try {
-      const response = await fetch(`${API_URL}/api/admin/product-categories/${category.id}`, {
-        method: "DELETE",
-        headers: headers(),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "No se pudo eliminar la categoría.");
-      }
-
-      await loadAdminData();
-      setMessage(`La categoría "${category.name}" fue eliminada.`);
-    } catch (error) {
-      setActionError(error instanceof Error ? error.message : "No se pudo eliminar la categoría.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (checking) {
-    return (
-      <main style={styles.centered}>
-        <div style={styles.loadingCard}>Abriendo administración Zénit…</div>
-      </main>
-    );
-  }
-
-  if (!authenticated) {
-    return (
-      <main style={styles.loginPage}>
-        <section style={styles.loginCard}>
-          <img src="/logo-zenit.png" alt="Zénit Salón" style={styles.loginLogo} />
-          <p style={styles.eyebrow}>Administración privada</p>
-          <h1 style={styles.loginTitle}>Control de catálogo</h1>
-          <p style={styles.loginText}>
-            Ingresá la clave administrativa para gestionar productos y categorías.
-          </p>
-
-          <form onSubmit={login} style={styles.loginForm}>
-            <label style={styles.label}>
-              Clave administrativa
-              <input
-                value={adminKey}
-                onChange={(event) => setAdminKey(event.target.value)}
-                type="password"
-                autoComplete="off"
-                placeholder="••••••••••••••"
-                style={styles.input}
-              />
-            </label>
-
-            {(loginError || actionError) && (
-              <p style={styles.error}>{loginError || actionError}</p>
-            )}
-
-            <button type="submit" style={styles.primaryButton} disabled={loading}>
-              {loading ? "Validando…" : "Ingresar al panel →"}
-            </button>
-          </form>
-
-          <a href="/" style={styles.backLink}>← Volver al sitio</a>
-        </section>
-      </main>
-    );
-  }
-
   return (
-    <main style={styles.adminPage} className={responsive.adminPage}>
-      <header style={styles.topbar} className={responsive.topbar}>
-        <div style={styles.brandWrap}>
-          <img src="/logo-zenit.png" alt="Zénit Salón" style={styles.brandLogo} />
-          <div>
-            <small style={styles.topbarSmall}>Panel administrativo</small>
-            <strong style={styles.topbarTitle}>Zénit Salón</strong>
-          </div>
-        </div>
+    <main>
+      <header className="site-header">
+        <Link className="brand" href="/" aria-label="Zénit Salón, inicio">
+          <img src="/logo-zenit.png" alt="Zénit Salón" />
+        </Link>
 
-        <div style={styles.topbarActions} className={responsive.topbarActions}>
-          <a href="/tienda" target="_blank" style={styles.secondaryButton}>
-            Ver tienda
-          </a>
-          <button type="button" onClick={logout} style={styles.secondaryButton}>
-            Cerrar sesión
-          </button>
+        <button
+          className="menu-toggle"
+          onClick={() => setMenuOpen(!menuOpen)}
+          aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
+          aria-expanded={menuOpen}
+          aria-controls="main-navigation"
+        >
+          {menuOpen ? "×" : "☰"}
+        </button>
+        <nav id="main-navigation" className={menuOpen ? "nav-open" : ""} aria-label="Navegación principal">
+          <Link className={isHome ? "active" : ""} href="/" onClick={() => setMenuOpen(false)}>Inicio</Link>
+          <Link className={isRegistration ? "active" : ""} href="/registro" onClick={() => setMenuOpen(false)}>Registro</Link>
+          <Link className={isShop ? "active" : ""} href="/tienda" onClick={() => setMenuOpen(false)}>Tienda</Link>
+          <Link className={isServices ? "active" : ""} href="/servicios" onClick={() => setMenuOpen(false)}>Servicios</Link>
+          <Link className={isReserve ? "active" : ""} href="/reservar" onClick={() => setMenuOpen(false)}>Reservar</Link>
+          <Link className={isAbout ? "active" : ""} href="/nosotros" onClick={() => setMenuOpen(false)}>Nosotros</Link>
+        </nav>
+
+        <div className="header-actions">
+          <Link className="button button-small" href="/reservar">Reservar</Link>
+          <Link className="account-link" href={profile ? "/mi-cuenta" : "/login"}>{profile ? "Mi cuenta" : "Ingresar"}</Link>
         </div>
       </header>
 
-      <section style={styles.shell}>
-        <div style={styles.headingRow}>
+      {isHome && <section className="hero" id="inicio">
+        <div className="hero-grid" aria-hidden="true" />
+        <div className="hero-glow" aria-hidden="true" />
+        <div className="hero-copy">
+
+          <h1><span>El punto máximo</span><em>de tu belleza.</em></h1>
+
+          <div className="hero-actions">
+            <Link className="button" href="/reservar">Reservar cita <b>→</b></Link>
+            <Link className="button button-ghost" href="/tienda">Explorar tienda</Link>
+          </div>
+          <div className="trust-row">
+            <span><b>✓</b> Atención personalizada</span>
+            <span><b>✓</b> Profesionales especializados</span>
+            <span><b>✓</b> Atención profesional</span>
+          </div>
+        </div>
+
+        <div className="hero-visual">
+          <div className="logo-stage">
+            <div className="orbit orbit-one" />
+            <div className="orbit orbit-two" />
+            <img src="/logo-zenit.png" alt="Logo de Zénit Salón" />
+          </div>
+        </div>
+      </section>}
+
+      {isHome && <section className="section home-directory">
+        <div className="section-heading">
+          <div><p className="eyebrow"><span /> Todo Zénit</p><h2>Todo para elevar tu estilo.</h2></div>
+          <p>Descubrí el Club Zénit, nuestra tienda, servicios y todo lo que hace de tu visita una experiencia completa.</p>
+        </div>
+        <div className="directory-grid">
+          <Link href="/registro"><span>01</span><h3>Club Zénit</h3><p>Creá tu tarjeta, consultá puntos y compartí códigos de referido.</p><b>Ir a Registro →</b></Link>
+          <Link href="/tienda"><span>02</span><h3>Tienda</h3><p>Explorá productos profesionales seleccionados para tu cuidado.</p><b>Entrar a la tienda →</b></Link>
+          <Link href="/servicios"><span>03</span><h3>Servicios</h3><p>Conocé las experiencias disponibles y reservá por WhatsApp.</p><b>Ver servicios →</b></Link>
+          <Link href="/nosotros"><span>04</span><h3>Nosotros</h3><p>Conocé nuestra experiencia, escribinos o encontrá la ruta al salón.</p><b>Conocernos →</b></Link>
+        </div>
+      </section>}
+
+      {isRegistration && <section className="section loyalty page-section" id="registro">
+        <div className="section-heading">
           <div>
-            <p style={styles.eyebrow}>Administración comercial</p>
-            <h1 style={styles.pageTitle}>Gestioná Zénit desde un solo lugar.</h1>
-            <p style={styles.pageLead}>
-              Administrá el catálogo y acreditá puntos a clientes desde secciones independientes.
-            </p>
+            <p className="eyebrow"><span /> Club Zénit</p>
+            <h2>Cada visita mueve tu recompensa.</h2>
           </div>
+          <p>Registrate gratis, acumulá puntos por tus compras y servicios, e invitá personas para construir una red que también te premie.</p>
         </div>
 
-        <nav className={responsive.sectionNav} aria-label="Secciones administrativas">
-          <button
-            type="button"
-            className={`${responsive.navButton} ${activeSection === "catalog" ? responsive.navButtonActive : ""}`}
-            onClick={() => setActiveSection("catalog")}
-          >
-            Productos y categorías
-          </button>
-          <button
-            type="button"
-            className={`${responsive.navButton} ${activeSection === "customers" ? responsive.navButtonActive : ""}`}
-            onClick={() => {
-              setActiveSection("customers");
-              void loadCustomers(1);
-            }}
-          >
-            Clientes registrados
-          </button>
-          <button
-            type="button"
-            className={`${responsive.navButton} ${activeSection === "points" ? responsive.navButtonActive : ""}`}
-            onClick={() => {
-              setActiveSection("points");
-              void loadCustomers(1);
-            }}
-          >
-            Agregar puntos
-          </button>
-        </nav>
-
-        {activeSection === "customers" && (
-          <section className={responsive.pointsPanel}>
-            <div className={responsive.customerHeading}>
-              <div>
-                <p style={styles.eyebrow}>Club Zénit</p>
-                <h2 style={styles.panelTitle}>Clientes registrados</h2>
-                <p style={styles.pageLead}>
-                  Consultá la lista completa, los puntos disponibles y administrá cada cuenta.
-                </p>
-              </div>
-              <strong className={responsive.customerCount}>{customerTotal} clientes</strong>
-            </div>
-
-            <form className={responsive.searchForm} onSubmit={searchCustomers}>
-              <input
-                value={customerQuery}
-                onChange={(event) => setCustomerQuery(event.target.value)}
-                placeholder="Buscar por nombre, correo, WhatsApp o código…"
-                aria-label="Buscar en la lista de clientes"
-                style={styles.searchInput}
-              />
-              <button type="submit" style={styles.primaryButton} disabled={customerLoading}>
-                {customerLoading ? "Cargando…" : "Buscar"}
-              </button>
-            </form>
-
-            {(message || actionError) && (
-              <div style={actionError ? styles.alertError : styles.alertSuccess}>
-                {actionError || message}
-              </div>
-            )}
-
-            <div className={responsive.customerTableWrap}>
-              <table className={responsive.customerTable}>
-                <thead>
-                  <tr>
-                    <th>Cliente</th>
-                    <th>Contacto</th>
-                    <th>Compras</th>
-                    <th>Referidos</th>
-                    <th>Total</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {customers.map((customer) => (
-                    <tr key={customer.id}>
-                      <td data-label="Cliente"><strong>{customer.name}</strong><small>{customer.customerId}</small></td>
-                      <td data-label="Contacto"><span>{customer.email}</span><small>{customer.phone}</small></td>
-                      <td data-label="Compras">{customer.purchasePoints}</td>
-                      <td data-label="Referidos">{customer.referralPoints}</td>
-                      <td data-label="Total"><strong className={responsive.tablePoints}>{customer.totalPoints}</strong></td>
-                      <td data-label="Acciones">
-                        <div className={responsive.customerActions}>
-                          <button type="button" onClick={() => openEditCustomer(customer)}>Editar</button>
-                          <button type="button" className={responsive.deleteButton} onClick={() => void deleteCustomer(customer)}>Eliminar</button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {customerTotalPages > 1 && (
-              <div className={responsive.pagination}>
-                <button type="button" disabled={customerLoading || customerPage <= 1} onClick={() => void loadCustomers(customerPage - 1)}>Anterior</button>
-                <span>Página {customerPage} de {customerTotalPages}</span>
-                <button type="button" disabled={customerLoading || customerPage >= customerTotalPages} onClick={() => void loadCustomers(customerPage + 1)}>Siguiente</button>
-              </div>
-            )}
-
-            {editingCustomer && customerForm && (
-              <div className={responsive.editOverlay} role="dialog" aria-modal="true" aria-labelledby="edit-customer-title">
-                <form className={responsive.editCustomerForm} onSubmit={saveCustomer}>
-                  <div className={responsive.editFormHeading}>
-                    <div><small>Editar cliente</small><h3 id="edit-customer-title">{editingCustomer.name}</h3></div>
-                    <button type="button" aria-label="Cerrar editor" onClick={() => { setEditingCustomer(null); setCustomerForm(null); }}>×</button>
-                  </div>
-                  <label style={styles.label}>Nombre<input required minLength={2} maxLength={120} value={customerForm.name} onChange={(event) => setCustomerForm({ ...customerForm, name: event.target.value })} style={styles.input} /></label>
-                  <label style={styles.label}>Correo<input required type="email" value={customerForm.email} onChange={(event) => setCustomerForm({ ...customerForm, email: event.target.value })} style={styles.input} /></label>
-                  <label style={styles.label}>WhatsApp<input required minLength={7} maxLength={30} value={customerForm.phone} onChange={(event) => setCustomerForm({ ...customerForm, phone: event.target.value })} style={styles.input} /></label>
-                  <div className={responsive.pointFields}>
-                    <label style={styles.label}>Puntos por compras<input required type="number" min="0" value={customerForm.purchasePoints} onChange={(event) => setCustomerForm({ ...customerForm, purchasePoints: event.target.value })} style={styles.input} /></label>
-                    <label style={styles.label}>Puntos por referidos<input required type="number" min="0" value={customerForm.referralPoints} onChange={(event) => setCustomerForm({ ...customerForm, referralPoints: event.target.value })} style={styles.input} /></label>
-                  </div>
-                  <div className={responsive.editFormActions}>
-                    <button type="button" onClick={() => { setEditingCustomer(null); setCustomerForm(null); }}>Cancelar</button>
-                    <button type="submit" style={styles.primaryButton} disabled={customerLoading}>{customerLoading ? "Guardando…" : "Guardar cambios"}</button>
-                  </div>
-                </form>
-              </div>
-            )}
-          </section>
-        )}
-
-        {activeSection === "points" && (
-          <section className={responsive.pointsPanel}>
-            <div>
-              <p style={styles.eyebrow}>Club Zénit</p>
-              <h2 style={styles.panelTitle}>Acreditar puntos</h2>
-              <p style={styles.pageLead}>
-                Buscá al cliente, verificá sus datos y registrá el monto de la compra o servicio.
-                Cada ₡100 confirmados equivalen a 1 punto.
-              </p>
-            </div>
-
-            <form className={responsive.searchForm} onSubmit={searchCustomers}>
-              <input
-                value={customerQuery}
-                onChange={(event) => setCustomerQuery(event.target.value)}
-                placeholder="Nombre, correo, WhatsApp o código de cliente…"
-                aria-label="Buscar cliente"
-                style={styles.searchInput}
-              />
-              <button type="submit" style={styles.primaryButton} disabled={customerLoading}>
-                {customerLoading ? "Buscando…" : "Buscar cliente"}
-              </button>
-            </form>
-
-            {(message || actionError) && (
-              <div style={actionError ? styles.alertError : styles.alertSuccess}>
-                {actionError || message}
-              </div>
-            )}
-
-            {customers.length > 0 && (
-              <div className={responsive.customerGrid}>
-                {customers.map((customer) => (
-                  <button
-                    type="button"
-                    key={customer.id}
-                    className={`${responsive.customerCard} ${selectedCustomer?.id === customer.id ? responsive.customerCardSelected : ""}`}
-                    onClick={() => {
-                      setSelectedCustomer(customer);
-                      setMessage("");
-                      setActionError("");
-                    }}
-                  >
-                    <small>{customer.customerId}</small>
-                    <strong>{customer.name}</strong>
-                    <span>{customer.email}</span>
-                    <span>{customer.phone}</span>
-                    <span>{customer.totalPoints} puntos disponibles</span>
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {selectedCustomer && (
-              <div className={responsive.awardLayout}>
-                <article className={responsive.summaryCard}>
-                  <small style={styles.metricLabel}>Cliente seleccionado</small>
-                  <h3>{selectedCustomer.name}</h3>
-                  <p>{selectedCustomer.customerId}</p>
-                  <p>{selectedCustomer.email}</p>
-                  <p>{selectedCustomer.phone}</p>
-                  <strong className={responsive.pointsTotal}>{selectedCustomer.totalPoints}</strong>
-                  <small style={styles.metricLabel}>Puntos disponibles</small>
-                </article>
-
-                <form className={responsive.awardForm} onSubmit={awardPoints}>
-                  <label style={styles.label}>
-                    Monto pagado en colones
-                    <input
-                      required
-                      type="number"
-                      min="100"
-                      step="100"
-                      inputMode="numeric"
-                      value={amountColones}
-                      onChange={(event) => setAmountColones(event.target.value)}
-                      placeholder="Ejemplo: 10000"
-                      style={styles.input}
-                    />
-                  </label>
-
-                  <label style={styles.label}>
-                    Descripción
-                    <input
-                      required
-                      minLength={3}
-                      maxLength={200}
-                      value={pointDescription}
-                      onChange={(event) => setPointDescription(event.target.value)}
-                      placeholder="Compra o servicio confirmado"
-                      style={styles.input}
-                    />
-                  </label>
-
-                  <div className={responsive.preview}>
-                    <span>Puntos que se acreditarán</span>
-                    <strong>+{pointsPreview} pts</strong>
-                  </div>
-
-                  <button
-                    type="submit"
-                    style={styles.primaryButton}
-                    disabled={customerLoading || pointsPreview <= 0}
-                  >
-                    {customerLoading ? "Guardando…" : `Confirmar +${pointsPreview} puntos`}
-                  </button>
-                </form>
-              </div>
-            )}
-          </section>
-        )}
-
-        <div hidden={activeSection !== "catalog"}>
-
-        <div style={styles.metricsGrid}>
-          <article style={styles.metricCard}>
-            <small style={styles.metricLabel}>Productos</small>
-            <strong style={styles.metricValue}>{products.length}</strong>
-          </article>
-          <article style={styles.metricCard}>
-            <small style={styles.metricLabel}>Disponibles</small>
-            <strong style={styles.metricValue}>
-              {products.filter((product) => product.available && product.active).length}
-            </strong>
-          </article>
-          <article style={styles.metricCard}>
-            <small style={styles.metricLabel}>Agotados</small>
-            <strong style={styles.metricValue}>
-              {products.filter((product) => !product.available).length}
-            </strong>
-          </article>
-          <article style={styles.metricCard}>
-            <small style={styles.metricLabel}>Categorías</small>
-            <strong style={styles.metricValue}>{categories.length}</strong>
-          </article>
-        </div>
-
-        {(message || actionError) && (
-          <div style={actionError ? styles.alertError : styles.alertSuccess}>
-            {actionError || message}
-          </div>
-        )}
-
-        <section style={styles.categoriesPanel}>
-          <div style={styles.sectionTop}>
-            <div>
-              <p style={styles.eyebrow}>Categorías</p>
-              <h2 style={styles.panelTitle}>Organización del catálogo</h2>
-            </div>
-            <button type="button" onClick={openCreateCategory} style={styles.primaryButton}>
-              + Nueva categoría
-            </button>
-          </div>
-
-          {showCategoryForm && (
-            <form onSubmit={submitCategory} style={styles.categoryForm}>
-              <div style={styles.twoColumns}>
-                <label style={styles.label}>
-                  Nombre
-                  <input
-                    required
-                    value={categoryForm.name}
-                    onChange={(event) =>
-                      setCategoryForm({ ...categoryForm, name: event.target.value })
-                    }
-                    style={styles.input}
-                  />
-                </label>
-
-                <label style={styles.label}>
-                  Orden
-                  <input
-                    type="number"
-                    min="0"
-                    value={categoryForm.sortOrder}
-                    onChange={(event) =>
-                      setCategoryForm({ ...categoryForm, sortOrder: event.target.value })
-                    }
-                    style={styles.input}
-                  />
-                </label>
-              </div>
-
-              <label style={styles.label}>
-                Descripción
-                <textarea
-                  value={categoryForm.description}
-                  onChange={(event) =>
-                    setCategoryForm({ ...categoryForm, description: event.target.value })
-                  }
-                  style={styles.textareaSmall}
-                />
-              </label>
-
-              <label style={styles.checkboxLabel}>
-                <input
-                  type="checkbox"
-                  checked={categoryForm.active}
-                  onChange={(event) =>
-                    setCategoryForm({ ...categoryForm, active: event.target.checked })
-                  }
-                />
-                Categoría activa
-              </label>
-
-              <div style={styles.formActions}>
-                <button type="button" onClick={closeCategoryForm} style={styles.secondaryButton}>
-                  Cancelar
-                </button>
-                <button type="submit" style={styles.primaryButton} disabled={loading}>
-                  {editingCategory ? "Guardar categoría" : "Crear categoría"}
-                </button>
-              </div>
-            </form>
-          )}
-
-          <div style={styles.categoryGrid}>
-            {categories.map((category) => (
-              <article key={category.id} style={styles.categoryCard}>
-                <div>
-                  <small style={styles.categoryMeta}>
-                    {category.productCount ?? 0} producto(s)
-                  </small>
-                  <h3 style={styles.categoryName}>{category.name}</h3>
-                  <p style={styles.categoryDescription}>
-                    {category.description || "Sin descripción."}
-                  </p>
+        <div className="loyalty-layout">
+          <div className="registration-panel">
+            {!profile ? (
+              <>
+                <div className="panel-title">
+                  <span>01</span>
+                  <div><small>Registro gratuito</small><h3>Creá tu cuenta</h3></div>
                 </div>
-
-                <div style={styles.cardActions}>
-                  <button
-                    type="button"
-                    onClick={() => openEditCategory(category)}
-                    style={styles.editButton}
-                  >
-                    Editar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => toggleCategory(category)}
-                    style={styles.secondaryButton}
-                  >
-                    {category.active ? "Desactivar" : "Activar"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => deleteCategory(category)}
-                    style={styles.deleteButton}
-                  >
-                    Eliminar
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section style={styles.productsPanel}>
-          <div style={styles.sectionTop}>
-            <div>
-              <p style={styles.eyebrow}>Productos</p>
-              <h2 style={styles.panelTitle}>Inventario</h2>
-            </div>
-            <button type="button" onClick={openCreateProduct} style={styles.primaryButton}>
-              + Nuevo producto
-            </button>
-          </div>
-
-          <div style={styles.toolbar}>
-            <input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Buscar por producto, marca, SKU o categoría…"
-              style={styles.searchInput}
-            />
-            <button type="button" onClick={() => loadAdminData()} style={styles.secondaryButton}>
-              Actualizar
-            </button>
-          </div>
-
-          {showProductForm && (
-            <section style={styles.formPanel}>
-              <div style={styles.formHeading}>
-                <div>
-                  <p style={styles.eyebrow}>
-                    {editingProduct ? "Editar producto" : "Nuevo producto"}
-                  </p>
-                  <h2 style={styles.formTitle}>
-                    {editingProduct ? editingProduct.name : "Agregar producto a Zénit"}
-                  </h2>
-                </div>
-                <button type="button" onClick={closeProductForm} style={styles.closeButton}>
-                  ×
-                </button>
-              </div>
-
-              <form onSubmit={submitProduct} style={styles.productForm}>
-                <div style={styles.twoColumns}>
-                  <label style={styles.label}>
-                    Nombre
-                    <input
-                      required
-                      value={productForm.name}
-                      onChange={(event) =>
-                        setProductForm({ ...productForm, name: event.target.value })
-                      }
-                      style={styles.input}
-                    />
-                  </label>
-
-                  <label style={styles.label}>
-                    Marca
-                    <input
-                      required
-                      value={productForm.brand}
-                      onChange={(event) =>
-                        setProductForm({ ...productForm, brand: event.target.value })
-                      }
-                      style={styles.input}
-                    />
-                  </label>
-
-                  <label style={styles.label}>
-                    Precio en colones
-                    <input
-                      required
-                      type="number"
-                      min="0"
-                      value={productForm.price}
-                      onChange={(event) =>
-                        setProductForm({ ...productForm, price: event.target.value })
-                      }
-                      style={styles.input}
-                    />
-                  </label>
-
-                  <label style={styles.label}>
-                    Stock
-                    <input
-                      type="number"
-                      min="0"
-                      placeholder="Vacío = sin control"
-                      value={productForm.stock}
-                      onChange={(event) =>
-                        setProductForm({ ...productForm, stock: event.target.value })
-                      }
-                      style={styles.input}
-                    />
-                  </label>
-
-                  <label style={styles.label}>
-                    Categoría
-                    <select
-                      required
-                      value={productForm.categoryId}
-                      onChange={(event) =>
-                        setProductForm({ ...productForm, categoryId: event.target.value })
-                      }
-                      style={styles.input}
-                    >
-                      <option value="">Seleccionar categoría</option>
-                      {categories
-                        .filter((category) => category.active)
-                        .map((category) => (
-                          <option key={category.id} value={category.id}>
-                            {category.name}
-                          </option>
-                        ))}
-                    </select>
-                  </label>
-
-                  <label style={styles.label}>
-                    SKU
-                    <input
-                      value={productForm.sku}
-                      onChange={(event) =>
-                        setProductForm({ ...productForm, sku: event.target.value })
-                      }
-                      style={styles.input}
-                      placeholder="Opcional"
-                    />
-                  </label>
-                </div>
-
-                <label style={styles.label}>
-                  Descripción
-                  <textarea
-                    required
-                    value={productForm.description}
-                    onChange={(event) =>
-                      setProductForm({ ...productForm, description: event.target.value })
-                    }
-                    style={styles.textarea}
-                  />
-                </label>
-
-                <div style={styles.uploadBox}>
-                  <div>
-                    <p style={styles.uploadTitle}>Imagen del producto</p>
-                    <p style={styles.uploadText}>
-                      Elegí una imagen JPG, PNG, WEBP o AVIF de hasta 5 MB.
-                    </p>
-                  </div>
-
-                  <label style={styles.uploadButton}>
-                    {uploadingImage ? "Subiendo…" : productForm.imageUrl ? "Cambiar imagen" : "Seleccionar imagen"}
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp,image/avif"
-                      onChange={handleImageUpload}
-                      disabled={uploadingImage}
-                      style={styles.hiddenInput}
-                    />
-                  </label>
-                </div>
-
-                {productForm.imageUrl && (
-                  <div style={styles.previewWrap}>
-                    <img
-                      src={productForm.imageUrl}
-                      alt="Vista previa"
-                      style={styles.previewImage}
-                    />
-                    <span style={styles.previewBadge}>Imagen lista</span>
-                  </div>
-                )}
-
-                <div style={styles.twoColumns}>
-                  <label style={styles.checkboxLabel}>
-                    <input
-                      type="checkbox"
-                      checked={productForm.available}
-                      onChange={(event) =>
-                        setProductForm({ ...productForm, available: event.target.checked })
-                      }
-                    />
-                    Disponible para clientes
-                  </label>
-
-                  <label style={styles.checkboxLabel}>
-                    <input
-                      type="checkbox"
-                      checked={productForm.active}
-                      onChange={(event) =>
-                        setProductForm({ ...productForm, active: event.target.checked })
-                      }
-                    />
-                    Visible en catálogo
-                  </label>
-                </div>
-
-                <div style={styles.formActions}>
-                  <button type="button" onClick={closeProductForm} style={styles.secondaryButton}>
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    style={styles.primaryButton}
-                    disabled={loading || uploadingImage}
-                  >
-                    {uploadingImage
-                      ? "Esperando imagen…"
-                      : loading
-                        ? "Guardando…"
-                        : editingProduct
-                          ? "Guardar cambios"
-                          : "Crear producto"}
-                  </button>
-                </div>
-              </form>
-            </section>
-          )}
-
-          {loading && !products.length ? (
-            <p style={styles.empty}>Cargando catálogo…</p>
-          ) : filteredProducts.length === 0 ? (
-            <p style={styles.empty}>No hay productos para mostrar.</p>
-          ) : (
-            <div style={styles.productGrid}>
-              {filteredProducts.map((product) => (
-                <article key={product.id} style={styles.productCard}>
-                  <div style={styles.imageFrame}>
-                    <img
-                      src={product.imageUrl}
-                      alt={product.name}
-                      style={styles.productImage}
-                    />
-                    <span
-                      style={{
-                        ...styles.statusBadge,
-                        ...(product.available && product.active
-                          ? styles.statusAvailable
-                          : styles.statusUnavailable),
-                      }}
-                    >
-                      {product.available && product.active ? "Disponible" : "No disponible"}
-                    </span>
-                  </div>
-
-                  <div style={styles.productBody}>
-                    <small style={styles.productCategory}>
-                      {product.category?.name || "Sin categoría"}
-                    </small>
-                    <h3 style={styles.productName}>{product.name}</h3>
-                    <p style={styles.productBrand}>{product.brand}</p>
-                    <strong style={styles.productPrice}>{formatColones(product.price)}</strong>
-                    <p style={styles.stockText}>
-                      Stock:{" "}
-                      {product.stock === null || product.stock === undefined
-                        ? "sin control"
-                        : product.stock}
-                    </p>
-
-                    <div style={styles.cardActions}>
-                      <button
-                        type="button"
-                        onClick={() => openEditProduct(product)}
-                        style={styles.editButton}
-                      >
-                        Editar
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => toggleAvailability(product)}
-                        style={styles.secondaryButton}
-                      >
-                        {product.available ? "Marcar agotado" : "Activar"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => deleteProduct(product)}
-                        style={styles.deleteButton}
-                      >
-                        Eliminar
+                <form className="registration-form" onSubmit={registerCustomer}>
+                  <label>Nombre completo<input name="name" required placeholder="Ej. Carlos Sánchez" /></label>
+                  <label>Correo electrónico<input name="email" type="email" required placeholder="correo@ejemplo.com" /></label>
+                  <label>WhatsApp<input name="phone" type="tel" required placeholder="+506 8888-8888" /></label>
+                  <label>
+                    Contraseña
+                    <div className="password-field">
+                      <input
+                        name="password"
+                        type={showRegisterPassword ? "text" : "password"}
+                        required
+                        minLength={8}
+                        placeholder="Mínimo 8 caracteres"
+                      />
+                      <button type="button" className="password-toggle" onClick={() => setShowRegisterPassword((visible) => !visible)} aria-label={showRegisterPassword ? "Ocultar contraseña" : "Mostrar contraseña"} aria-pressed={showRegisterPassword}>
+                        {showRegisterPassword ? (
+                          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M10.6 10.7a2 2 0 002.7 2.7M9.9 4.2A10.8 10.8 0 0112 4c5.5 0 9 5.1 9 5.1a15 15 0 01-3.1 3.6M6.2 6.2C4.2 7.5 3 9.1 3 9.1S6.5 15 12 15c1 0 2-.2 2.9-.5" /></svg>
+                        ) : (
+                          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" /><circle cx="12" cy="12" r="2.5" /></svg>
+                        )}
                       </button>
                     </div>
-                  </div>
-                </article>
-              ))}
+                  </label>
+                  <label>Código de referido <small>Opcional</small><input name="referral" placeholder="Ej. ZENIT-A7K29Q" /></label>
+                  <label className="terms-check"><input type="checkbox" required /><span>Acepto los términos del programa de fidelización.</span></label>
+                  {authError && <p className="inline-error">{authError}</p>}
+                  <button className="button" type="submit" disabled={authLoading}>{authLoading ? "Creando cuenta..." : "Crear mi cuenta →"}</button>
+                </form>
+              </>
+            ) : (
+              <div className="registration-success">
+                <span>✓</span><p className="eyebrow">Cuenta activa</p><h3>¡Bienvenido al Club Zénit!</h3>
+                <p>{authMessage || "Tu tarjeta digital ya está vinculada de forma segura a tu correo y WhatsApp."}</p>
+                <button className="button" type="button" onClick={logoutCustomer}>Cerrar sesión</button>
+              </div>
+            )}
+          </div>
+
+          <article className="loyalty-card" aria-label="Vista previa de tarjeta digital">
+            <div className="card-top"><img src="/logo-zenit.png" alt="" /><div><small>Cliente frecuente</small><strong>Club Zénit</strong></div><span>ACTIVA</span></div>
+            <div className="customer-data"><small>Cliente</small><h3>{profile ? profile.name : "Tu nombre aparecerá aquí"}</h3><p>ID {profile?.customerId || "JAM-2026-0000"}</p></div>
+            <div className="points-total"><small>Puntos disponibles</small><strong>{totalPoints}</strong><span>pts</span></div>
+            <div className="points-split"><div><small>Por compras y servicios</small><strong>{profile?.purchasePoints || 0} pts</strong></div><div><small>Por referidos</small><strong>{profile?.referralPoints || 0} pts</strong></div></div>
+            <div className="referral-generator">
+              <div><small>Tu código de referido</small><strong>{referralCode || "Generá uno cuando lo necesités"}</strong>{referralCode && <span>Vence {new Date(referralExpiry).toLocaleDateString("es-CR")} · Un solo uso</span>}</div>
+              {!referralCode ? (
+                <button onClick={generateReferralCode} disabled={!profile}>{profile ? "Generar código" : "Registrate primero"}</button>
+              ) : (
+                <div className="referral-actions">
+                  <button onClick={copyReferralCode}>{copied ? "Copiado ✓" : "Copiar"}</button>
+                  <a href={`https://wa.me/?text=${encodeURIComponent(`Registrate en el Club Zénit con mi código ${referralCode}. Vence en 3 días.`)}`} target="_blank" rel="noreferrer">WhatsApp</a>
+                  <button onClick={generateReferralCode}>Nuevo</button>
+                </div>
+              )}
             </div>
-          )}
-        </section>
+            <p className="demo-note">Cada ₡100 pagados y confirmados equivalen a 1 punto.</p>
+          </article>
         </div>
-      </section>
+
+        <div className="benefit-strip">
+          <div><span>01</span><strong>Comprá o recibí un servicio</strong><p>Sumás puntos personales por cada transacción confirmada.</p></div>
+          <div><span>02</span><strong>Invitá con un código</strong><p>Cada código es único, vence en tres días y funciona una sola vez.</p></div>
+          <div><span>03</span><strong>Tu red también suma</strong><p>Ganás puntos cuando tus referidos compran productos o reservan servicios en Zénit.</p></div>
+        </div>
+      </section>}
+
+      {isLogin && <section className="section auth-page page-section">
+        <div className="auth-copy">
+          <p className="eyebrow"><span /> Acceso Club Zénit</p>
+          <h2>Tu estilo, tus puntos y tu historial en un solo lugar.</h2>
+          <p>Ingresá de forma segura para consultar tu tarjeta digital, tus puntos y la actividad registrada por el salón.</p>
+          <div className="auth-features"><span>✓ Tarjeta digital</span><span>✓ Recompensas</span><span>✓ Historial de servicios</span></div>
+        </div>
+        <div className="auth-panel">
+          <div className="panel-title"><span>→</span><div><small>Cliente registrado</small><h3>Ingresar</h3></div></div>
+          <form className="registration-form single-column" onSubmit={loginCustomer}>
+            <label>Correo electrónico<input name="email" type="email" required placeholder="correo@ejemplo.com" /></label>
+            <label>
+              Contraseña
+              <div className="password-field">
+                <input name="password" type={showLoginPassword ? "text" : "password"} required minLength={6} placeholder="••••••••" />
+                <button type="button" className="password-toggle" onClick={() => setShowLoginPassword((visible) => !visible)} aria-label={showLoginPassword ? "Ocultar contraseña" : "Mostrar contraseña"} aria-pressed={showLoginPassword}>
+                  {showLoginPassword ? (
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M10.6 10.7a2 2 0 002.7 2.7M9.9 4.2A10.8 10.8 0 0112 4c5.5 0 9 5.1 9 5.1a15 15 0 01-3.1 3.6M6.2 6.2C4.2 7.5 3 9.1 3 9.1S6.5 15 12 15c1 0 2-.2 2.9-.5" /></svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" /><circle cx="12" cy="12" r="2.5" /></svg>
+                  )}
+                </button>
+              </div>
+            </label>
+            {authError && <p className="inline-error">{authError}</p>}
+            <button className="button" type="submit" disabled={authLoading}>{authLoading ? "Ingresando..." : "Ingresar a mi cuenta →"}</button>
+          </form>
+          {authMessage && <div className="inline-success">{authMessage}<Link href="/mi-cuenta">Abrir mi cuenta →</Link></div>}
+          <p className="auth-switch">¿Todavía no sos parte? <Link href="/registro">Crear cuenta gratis</Link></p>
+        </div>
+      </section>}
+
+      {isAccount && <section className="section account-page page-section">
+        {!profile ? (
+          <div className="account-empty">
+            <p className="eyebrow"><span /> Club Zénit</p>
+            <h2>{sessionLoading ? "Cargando tu cuenta..." : "Primero ingresá a tu cuenta."}</h2>
+            <p>{sessionLoading ? "Estamos recuperando tu tarjeta digital." : "Así podremos mostrar tu tarjeta, tus puntos y tu historial."}</p>
+            <div><Link className="button" href="/login">Ingresar →</Link><Link className="button button-ghost" href="/registro">Registrarme</Link></div>
+          </div>
+        ) : (
+          <>
+            <div className="account-heading">
+              <div><p className="eyebrow"><span /> Mi cuenta</p><h2>Hola, {profile.name.split(" ")[0]}.</h2><p>Todo lo importante de tu relación con Zénit, sin papeles ni vueltas.</p></div>
+              <button className="text-button" onClick={logoutCustomer}>Cerrar sesión</button>
+            </div>
+            <div className="account-grid">
+              <article className="loyalty-card account-card">
+                <div className="card-top"><img src="/logo-zenit.png" alt="" /><div><small>Cliente frecuente</small><strong>Club Zénit</strong></div><span>ACTIVA</span></div>
+                <div className="customer-data"><small>Cliente</small><h3>{profile.name}</h3><p>ID {profile.customerId}</p></div>
+                <div className="points-total"><small>Saldo total</small><strong>{totalPoints}</strong><span>pts</span></div>
+                <div className="points-split"><div><small>Compras y servicios</small><strong>{profile.purchasePoints} pts</strong></div><div><small>Red de referidos</small><strong>{profile.referralPoints} pts</strong></div></div>
+              </article>
+              <div className="account-summary">
+                <article><small>Referidos activos</small><strong>{profile.referrals}</strong><p>Personas registradas con tus códigos.</p></article>
+                <article><small>Próxima recompensa</small><strong>—</strong><p>Disponible próximamente.</p></article>
+                <article><small>Última visita</small><strong>—</strong><p>Sin visitas registradas.</p></article>
+              </div>
+            </div>
+
+            <div className="account-section contest-section">
+              <div className="subheading">
+                <div>
+                  <p className="eyebrow"><span /> Concurso activo · Club Zénit</p>
+                  <h3>Tu registro puede llevarte a ganar.</h3>
+                </div>
+                <p>La rifa se realizará el viernes 18 de septiembre de 2026 a la 1:00 p. m. entre las personas registradas en el Club Zénit.</p>
+              </div>
+
+              <div className="contest-panel">
+                <div className="contest-copy">
+                  <small>PREMIO ESPECIAL</small>
+                  <strong>50% DE DESCUENTO</strong>
+                  <p>La persona ganadora podrá elegir uno de los siguientes servicios:</p>
+                  <ul>
+                    <li>Tratamiento de aminoácidos + corte</li>
+                    <li>Velo de brillo + corte</li>
+                    <li>Botox capilar + corte</li>
+                  </ul>
+                  <p className="contest-live">El sorteo se transmitirá en vivo por el Facebook oficial de Zénit Salón.</p>
+                </div>
+
+                <div className="contest-countdown" aria-live="polite">
+                  <small>{contestCountdown.finished ? "SORTEO" : "CUENTA REGRESIVA"}</small>
+                  {contestCountdown.finished ? (
+                    <div className="contest-today">
+                      <strong>¡ES HOY!</strong>
+                      <span>Seguí la transmisión oficial en Facebook Live.</span>
+                    </div>
+                  ) : (
+                    <div className="countdown-grid">
+                      <div><strong>{String(contestCountdown.days).padStart(2, "0")}</strong><span>DÍAS</span></div>
+                      <div><strong>{String(contestCountdown.hours).padStart(2, "0")}</strong><span>HORAS</span></div>
+                      <div><strong>{String(contestCountdown.minutes).padStart(2, "0")}</strong><span>MIN</span></div>
+                      <div><strong>{String(contestCountdown.seconds).padStart(2, "0")}</strong><span>SEG</span></div>
+                    </div>
+                  )}
+                  <p>Viernes 18 de septiembre · 1:00 p. m. · Costa Rica</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="account-columns">
+              <div className="account-section referral-center">
+                <p className="eyebrow"><span /> Crecé tu red</p><h3>Invitar a alguien</h3><p>El código vence en tres días y solo puede utilizarse una vez. Podés generar otro cuando el anterior expire o sea utilizado.</p>
+                <div className="referral-generator">
+                  <div><small>Código activo</small><strong>{referralCode || "Sin código activo"}</strong>{referralCode && <span>Vence {new Date(referralExpiry).toLocaleDateString("es-CR")}</span>}</div>
+                  {!referralCode ? <button onClick={generateReferralCode}>Generar código</button> : <div className="referral-actions"><button onClick={copyReferralCode}>{copied ? "Copiado ✓" : "Copiar"}</button><a href={`https://wa.me/?text=${encodeURIComponent(`Registrate en el Club Zénit con mi código ${referralCode}.`)}`} target="_blank" rel="noreferrer">WhatsApp</a></div>}
+                </div>
+              </div>
+              <div className="account-section">
+                <p className="eyebrow"><span /> Actividad</p><h3>Historial reciente</h3>
+                <div className="history-list">
+                  {movements.length ? movements.map((movement) => (
+                    <div key={movement.id}>
+                      <span>{new Date(movement.created_at).toLocaleDateString("es-CR", { day: "2-digit", month: "short" }).toUpperCase()}</span>
+                      <p><strong>{movement.description}</strong><small>{movement.points >= 0 ? "+" : ""}{movement.points} pts</small></p>
+                    </div>
+                  )) : <p className="empty-history">Tus movimientos aparecerán aquí cuando el salón confirme una compra, servicio o ajuste.</p>}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </section>}
+
+      {isServices && <section className="section services page-section" id="servicios">
+        <div className="process-inside">
+          <div className="section-heading centered"><div><p className="eyebrow"><span /> Cómo funciona</p><h2>Así de fácil elevamos tu estilo.</h2></div></div>
+          <div className="process-grid">
+            {[
+              ["01", "Elegí", "Seleccioná el servicio que mejor acompaña tu estilo."],
+              ["02", "Solicitá", "La solicitud queda registrada y llega ordenada a WhatsApp."],
+              ["03", "Coordiná", "Zénit confirma disponibilidad y fecha directamente con vos."],
+              ["04", "Sumá puntos", "Con cada compra o servicio confirmado crece tu saldo Zénit."],
+            ].map(([number, title, text]) => (
+              <article key={number}><span>{number}</span><h3>{title}</h3><p>{text}</p></article>
+            ))}
+          </div>
+        </div>
+        <div className="section-heading">
+          <div><p className="eyebrow"><span /> Todo en un solo lugar</p><h2>Belleza, precisión y experiencia.</h2></div>
+          <p>Desde un cambio sutil hasta una transformación completa, cuidamos cada detalle.</p>
+        </div>
+        <div className="service-grid">
+          {services.map((service) => (
+            <article className="service-card" key={service.title}>
+              <span className="service-icon">{service.icon}</span><h3>{service.title}</h3><p>{service.text}</p>
+              <ul>{service.specialties.map((specialty) => <li key={specialty}>{specialty}</li>)}</ul>
+              <button type="button" onClick={() => { setSelectedService(service.title); document.getElementById("solicitar-servicio")?.scrollIntoView({ behavior: "smooth" }); }}>Solicitar servicio <b>↗</b></button>
+            </article>
+          ))}
+        </div>
+
+        <article className="service-request-panel" id="solicitar-servicio">
+          <div className="service-request-copy">
+            <p className="eyebrow"><span /> Solicitud registrada</p><h3>Contanos cómo querés verte y sentirte.</h3>
+            <p>Guardaremos la solicitud para darle seguimiento desde el panel y luego abriremos WhatsApp para coordinar los detalles.</p>
+            <div className="parts-benefits"><span>✓ Seguimiento interno</span><span>✓ Atención por WhatsApp</span><span>✓ Fecha sujeta a confirmación</span></div>
+          </div>
+          <form className="service-request-form" onSubmit={requestService}>
+            <label>Nombre completo<input name="name" required placeholder="Ej. Carlos Sánchez" /></label>
+            <div className="form-row">
+              <label>WhatsApp<input name="phone" required inputMode="tel" placeholder="Ej. 7124 6337" /></label>
+              <label>Servicio<select name="service" value={selectedService} onChange={(event) => setSelectedService(event.target.value)} required>{services.map((service) => <option key={service.title} value={service.title}>{service.title}</option>)}</select></label>
+            </div>
+            <label>Detalles<textarea name="details" required placeholder="Contanos el resultado que buscás o cualquier detalle importante." /></label>
+            <div className="form-row">
+              <label>Fecha preferida <small>Opcional; no confirma la cita</small><input name="preferredDate" type="date" /></label>
+              <label>Hora preferida <small>Opcional</small><input name="preferredTime" type="time" /></label>
+            </div>
+            {serviceRequestError && <p className="inline-error">{serviceRequestError}</p>}
+            <button className="button" type="submit" disabled={serviceRequestLoading}>{serviceRequestLoading ? "Registrando solicitud..." : <>Enviar y coordinar por WhatsApp <b>→</b></>}</button>
+            <small className="form-note">Zénit confirmará por WhatsApp la fecha y disponibilidad del servicio.</small>
+          </form>
+        </article>
+      </section>}
+
+      {isShop && <section className="section shop page-section" id="tienda">
+        <div className="section-heading">
+          <div><p className="eyebrow"><span /> Tienda Zénit</p><h2>Productos profesionales para prolongar tu experiencia.</h2></div>
+          <p>Estamos preparando una experiencia más clara para que encontrés lo que tu estilo necesita.</p>
+        </div>
+        <div className="product-grid">
+          {[
+            ["Shampoo profesional", "Limpieza profunda con acabado suave y brillante."],
+            ["Tratamiento reparador", "Nutrición intensiva para cabello seco o procesado."],
+            ["Aceite capilar premium", "Brillo, control y protección para el uso diario."],
+          ].map(([title, description]) => (
+            <article className="product-card" key={title}><div className="product-art"><span>✦</span><small>Próximamente</small></div><div className="product-copy"><h3>{title}</h3><p>{description}</p></div></article>
+          ))}
+        </div>
+        <a className="button shop-all" href="https://wa.me/50671246337?text=Hola%2C%20quiero%20consultar%20por%20productos%20de%20Z%C3%A9nit%20Sal%C3%B3n" target="_blank" rel="noreferrer">Consultar disponibilidad por WhatsApp →</a>
+      </section>}
+
+      {isAbout && <section className="section about-contact page-section" id="nosotros">
+        <div className="about-contact-intro">
+          <div className="about-copy"><p className="eyebrow"><span /> Zénit Salón</p><h2>El punto máximo de tu belleza.</h2><p>Un espacio creado para elevar tu imagen con atención personalizada, técnica profesional y una experiencia donde cada detalle cuenta.</p></div>
+          <div className="about-stat"><strong>✦</strong><span>Belleza con propósito</span><small>San Carlos, Costa Rica</small></div>
+        </div>
+        <div className="contact-hub">
+          <div className="contact-hub-copy">
+            <p className="eyebrow"><span /> Contacto y ubicación</p><h3>Estamos listos para ayudarte.</h3>
+            <p>Escribinos, conocé nuestro trabajo en Facebook o abrí la ruta al salón desde tu aplicación favorita.</p>
+            <div className="contact-details">
+              <a href="https://wa.me/50671246337" target="_blank" rel="noreferrer"><small>Teléfono y WhatsApp</small><strong>+506 7124-6337</strong></a>
+              <span><small>Ubicación</small><strong>Dulce Nombre, Calle Sancho, San Carlos</strong></span>
+            </div>
+          </div>
+          <div className="about-actions">
+            <a className="button" href="https://wa.me/50671246337" target="_blank" rel="noreferrer">Escribir por WhatsApp →</a>
+            <a className="button button-ghost" href="https://www.google.com/maps/search/?api=1&query=Dulce%20Nombre%20Calle%20Sancho%20San%20Carlos%20Costa%20Rica" target="_blank" rel="noreferrer">Llegar con Google Maps →</a>
+            <a className="button button-ghost" href="https://www.waze.com/ul?q=Dulce%20Nombre%20Calle%20Sancho%20San%20Carlos%20Costa%20Rica&navigate=yes" target="_blank" rel="noreferrer">Llegar con Waze →</a>
+          </div>
+        </div>
+      </section>}
+
+      <footer>
+        <div className="footer-brand"><img src="/logo-zenit.png" alt="Zénit Salón" /></div>
+        <div className="footer-contact" aria-label="Información de contacto">
+          <p><strong>Teléfono y WhatsApp</strong><span>+506 7124-6337</span></p>
+          <p><strong>Ubicación</strong><span>Dulce Nombre, Calle Sancho, San Carlos</span></p>
+        </div>
+        <p className="footer-copyright">© 2026 Zénit Salón</p>
+      </footer>
     </main>
   );
 }
-
-const styles: Record<string, CSSProperties> = {
-  centered: { minHeight: "100vh", display: "grid", placeItems: "center", background: "#07111e", color: "#fff", padding: 24 },
-  loadingCard: { padding: "28px 34px", border: "1px solid rgba(255,255,255,.12)", borderRadius: 20, background: "rgba(255,255,255,.04)" },
-  loginPage: { minHeight: "100vh", display: "grid", placeItems: "center", padding: 24, background: "radial-gradient(circle at 70% 20%, rgba(44,126,206,.18), transparent 34%), #06101c", color: "#fff" },
-  loginCard: { width: "min(100%, 460px)", padding: 38, borderRadius: 28, border: "1px solid rgba(255,255,255,.1)", background: "rgba(10,24,40,.92)", boxShadow: "0 30px 80px rgba(0,0,0,.35)" },
-  loginLogo: { width: 130, height: "auto", marginBottom: 24 },
-  eyebrow: { margin: "0 0 8px", fontSize: 12, letterSpacing: ".16em", textTransform: "uppercase", color: "#7fbfff", fontWeight: 700 },
-  loginTitle: { margin: 0, fontSize: 38, lineHeight: 1.05, fontWeight: 600 },
-  loginText: { color: "#9fb0c2", lineHeight: 1.7, margin: "16px 0 26px" },
-  loginForm: { display: "grid", gap: 18 },
-  label: { display: "grid", gap: 8, fontSize: 13, color: "#cbd7e4", fontWeight: 600 },
-  input: { width: "100%", boxSizing: "border-box", border: "1px solid rgba(255,255,255,.12)", borderRadius: 14, background: "#0b1b2d", color: "#fff", padding: "14px 15px", outline: "none", fontSize: 15 },
-  textarea: { width: "100%", boxSizing: "border-box", minHeight: 120, resize: "vertical", border: "1px solid rgba(255,255,255,.12)", borderRadius: 14, background: "#0b1b2d", color: "#fff", padding: "14px 15px", outline: "none", fontSize: 15, fontFamily: "inherit" },
-  textareaSmall: { width: "100%", boxSizing: "border-box", minHeight: 90, resize: "vertical", border: "1px solid rgba(255,255,255,.12)", borderRadius: 14, background: "#0b1b2d", color: "#fff", padding: "14px 15px", outline: "none", fontSize: 15, fontFamily: "inherit" },
-  primaryButton: { border: 0, borderRadius: 14, padding: "14px 18px", background: "linear-gradient(135deg, #4aa6ff, #2569b4)", color: "#fff", fontWeight: 800, cursor: "pointer", textDecoration: "none" },
-  secondaryButton: { border: "1px solid rgba(255,255,255,.14)", borderRadius: 12, padding: "11px 14px", background: "rgba(255,255,255,.04)", color: "#dce8f5", fontWeight: 700, cursor: "pointer", textDecoration: "none", fontSize: 13 },
-  backLink: { display: "inline-block", marginTop: 22, color: "#91a6bc", textDecoration: "none", fontSize: 13 },
-  error: { margin: 0, padding: "12px 14px", borderRadius: 12, background: "rgba(255,88,88,.12)", color: "#ffaaaa", fontSize: 13 },
-  adminPage: { minHeight: "100vh", background: "#07111e", color: "#fff" },
-  topbar: { minHeight: 76, padding: "12px clamp(18px, 4vw, 56px)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20, borderBottom: "1px solid rgba(255,255,255,.08)", background: "rgba(7,17,30,.96)", position: "sticky", top: 0, zIndex: 20, backdropFilter: "blur(18px)" },
-  brandWrap: { display: "flex", alignItems: "center", gap: 14 },
-  brandLogo: { width: 70, height: "auto" },
-  topbarSmall: { display: "block", color: "#70869b", fontSize: 11, textTransform: "uppercase", letterSpacing: ".12em" },
-  topbarTitle: { display: "block", marginTop: 2, fontSize: 16 },
-  topbarActions: { display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" },
-  shell: { width: "min(1400px, calc(100% - 32px))", margin: "0 auto", padding: "44px 0 70px" },
-  headingRow: { display: "flex", justifyContent: "space-between", gap: 28, alignItems: "end", flexWrap: "wrap" },
-  pageTitle: { fontSize: "clamp(34px, 5vw, 58px)", lineHeight: 1, margin: 0, maxWidth: 780, fontWeight: 600 },
-  pageLead: { maxWidth: 700, margin: "16px 0 0", color: "#8fa5ba", lineHeight: 1.7 },
-  metricsGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14, marginTop: 34 },
-  metricCard: { padding: 22, borderRadius: 18, border: "1px solid rgba(255,255,255,.08)", background: "linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.025))" },
-  metricLabel: { color: "#8298ad", textTransform: "uppercase", letterSpacing: ".12em", fontSize: 10 },
-  metricValue: { display: "block", marginTop: 8, fontSize: 32 },
-  alertSuccess: { marginTop: 20, padding: "13px 16px", borderRadius: 12, background: "rgba(58,196,132,.12)", color: "#85e3b9", border: "1px solid rgba(58,196,132,.2)" },
-  alertError: { marginTop: 20, padding: "13px 16px", borderRadius: 12, background: "rgba(255,88,88,.12)", color: "#ffaaaa", border: "1px solid rgba(255,88,88,.2)" },
-  categoriesPanel: { marginTop: 30, padding: "clamp(20px, 3vw, 30px)", borderRadius: 24, border: "1px solid rgba(255,255,255,.08)", background: "rgba(255,255,255,.025)" },
-  sectionTop: { display: "flex", justifyContent: "space-between", gap: 18, alignItems: "end", flexWrap: "wrap" },
-  panelTitle: { margin: 0, fontSize: 26 },
-  categoryForm: { display: "grid", gap: 16, marginTop: 22, padding: 22, borderRadius: 18, border: "1px solid rgba(85,166,255,.2)", background: "#0a1a2b" },
-  categoryGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 14, marginTop: 22 },
-  categoryCard: { display: "flex", flexDirection: "column", justifyContent: "space-between", gap: 18, padding: 20, borderRadius: 18, border: "1px solid rgba(255,255,255,.08)", background: "#0a1827" },
-  categoryMeta: { color: "#69adf3", textTransform: "uppercase", letterSpacing: ".1em", fontSize: 10 },
-  categoryName: { margin: "7px 0 5px", fontSize: 21 },
-  categoryDescription: { margin: 0, color: "#8499ad", lineHeight: 1.55, fontSize: 13 },
-  toolbar: { marginTop: 24, display: "flex", gap: 12, flexWrap: "wrap" },
-  searchInput: { flex: "1 1 320px", minWidth: 0, border: "1px solid rgba(255,255,255,.1)", borderRadius: 14, background: "#0b1b2d", color: "#fff", padding: "13px 15px", outline: "none" },
-  formPanel: { marginTop: 28, padding: "clamp(22px, 4vw, 34px)", borderRadius: 24, border: "1px solid rgba(85,166,255,.22)", background: "linear-gradient(145deg, rgba(15,38,62,.95), rgba(8,23,39,.98))" },
-  formHeading: { display: "flex", justifyContent: "space-between", gap: 20, alignItems: "start" },
-  formTitle: { margin: 0, fontSize: 28 },
-  closeButton: { border: "1px solid rgba(255,255,255,.1)", background: "rgba(255,255,255,.04)", color: "#fff", width: 42, height: 42, borderRadius: 12, cursor: "pointer", fontSize: 24 },
-  productForm: { display: "grid", gap: 18, marginTop: 24 },
-  twoColumns: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: 16 },
-  checkboxLabel: { display: "flex", gap: 10, alignItems: "center", color: "#cbd7e4", fontSize: 14 },
-  uploadBox: { display: "flex", justifyContent: "space-between", gap: 16, alignItems: "center", flexWrap: "wrap", padding: 18, borderRadius: 16, border: "1px dashed rgba(127,191,255,.35)", background: "rgba(53,122,190,.08)" },
-  uploadTitle: { margin: 0, fontWeight: 800, color: "#fff" },
-  uploadText: { margin: "5px 0 0", color: "#8fa5ba", fontSize: 13 },
-  uploadButton: { display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "12px 16px", borderRadius: 12, background: "#2a75bd", color: "#fff", fontWeight: 800, cursor: "pointer", fontSize: 13 },
-  hiddenInput: { display: "none" },
-  previewWrap: { position: "relative", width: 180, height: 180, borderRadius: 18, overflow: "hidden", border: "1px solid rgba(255,255,255,.1)", background: "#081522" },
-  previewImage: { width: "100%", height: "100%", objectFit: "cover" },
-  previewBadge: { position: "absolute", left: 10, bottom: 10, padding: "6px 8px", borderRadius: 999, background: "rgba(42,181,116,.92)", color: "#fff", fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: ".08em" },
-  formActions: { display: "flex", justifyContent: "flex-end", gap: 12, flexWrap: "wrap" },
-  productsPanel: { marginTop: 32, padding: "clamp(20px, 3vw, 30px)", borderRadius: 24, border: "1px solid rgba(255,255,255,.08)", background: "rgba(255,255,255,.025)" },
-  productGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 18, marginTop: 22 },
-  productCard: { overflow: "hidden", borderRadius: 20, border: "1px solid rgba(255,255,255,.08)", background: "#0a1827" },
-  imageFrame: { position: "relative", height: 220, background: "#081522", overflow: "hidden" },
-  productImage: { width: "100%", height: "100%", objectFit: "cover" },
-  statusBadge: { position: "absolute", top: 12, right: 12, padding: "7px 9px", borderRadius: 999, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: ".08em" },
-  statusAvailable: { background: "rgba(42,181,116,.9)", color: "#fff" },
-  statusUnavailable: { background: "rgba(157,74,74,.92)", color: "#fff" },
-  productBody: { padding: 18 },
-  productCategory: { color: "#69adf3", textTransform: "uppercase", letterSpacing: ".1em", fontSize: 10 },
-  productName: { margin: "7px 0 2px", fontSize: 21 },
-  productBrand: { margin: 0, color: "#8499ad", fontSize: 13 },
-  productPrice: { display: "block", marginTop: 13, fontSize: 21 },
-  stockText: { margin: "7px 0 0", color: "#7d91a5", fontSize: 12 },
-  cardActions: { display: "flex", flexWrap: "wrap", gap: 8, marginTop: 18 },
-  editButton: { border: 0, borderRadius: 11, padding: "10px 13px", background: "#2a75bd", color: "#fff", fontWeight: 800, cursor: "pointer", fontSize: 12 },
-  deleteButton: { border: "1px solid rgba(255,90,90,.2)", borderRadius: 11, padding: "10px 13px", background: "rgba(255,90,90,.08)", color: "#ff9a9a", fontWeight: 800, cursor: "pointer", fontSize: 12 },
-  empty: { padding: "36px 0", color: "#7f94a8", textAlign: "center" },
-};

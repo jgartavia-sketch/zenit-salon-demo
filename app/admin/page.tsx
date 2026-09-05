@@ -2,6 +2,7 @@
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
+import Link from "next/link";
 import responsive from "./admin.module.css";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/$/, "");
@@ -70,6 +71,14 @@ type Customer = {
   totalPoints: number;
 };
 
+type CustomerForm = {
+  name: string;
+  email: string;
+  phone: string;
+  purchasePoints: string;
+  referralPoints: string;
+};
+
 const emptyProductForm: ProductForm = {
   name: "",
   brand: "",
@@ -100,7 +109,7 @@ function formatColones(value: number) {
 }
 
 export default function AdminPage() {
-  const [activeSection, setActiveSection] = useState<"catalog" | "points">("catalog");
+  const [activeSection, setActiveSection] = useState<"catalog" | "customers" | "points">("catalog");
   const [adminKey, setAdminKey] = useState("");
   const [authenticated, setAuthenticated] = useState(false);
   const [checking, setChecking] = useState(true);
@@ -127,6 +136,11 @@ export default function AdminPage() {
   const [customerLoading, setCustomerLoading] = useState(false);
   const [amountColones, setAmountColones] = useState("");
   const [pointDescription, setPointDescription] = useState("Compra o servicio confirmado");
+  const [customerPage, setCustomerPage] = useState(1);
+  const [customerTotal, setCustomerTotal] = useState(0);
+  const [customerTotalPages, setCustomerTotalPages] = useState(1);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [customerForm, setCustomerForm] = useState<CustomerForm | null>(null);
 
   const headers = (key = adminKey) => ({
     "Content-Type": "application/json",
@@ -177,22 +191,26 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
-    const savedKey = sessionStorage.getItem(ADMIN_SESSION_KEY);
+    const timer = window.setTimeout(() => {
+      const savedKey = sessionStorage.getItem(ADMIN_SESSION_KEY);
 
-    if (!savedKey) {
-      setChecking(false);
-      return;
-    }
-
-    setAdminKey(savedKey);
-
-    loadAdminData(savedKey).then((ok) => {
-      if (ok) {
-        setAuthenticated(true);
-      } else {
-        sessionStorage.removeItem(ADMIN_SESSION_KEY);
+      if (!savedKey) {
+        setChecking(false);
+        return;
       }
-    });
+
+      setAdminKey(savedKey);
+
+      loadAdminData(savedKey).then((ok) => {
+        if (ok) {
+          setAuthenticated(true);
+        } else {
+          sessionStorage.removeItem(ADMIN_SESSION_KEY);
+        }
+      });
+    }, 0);
+
+    return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -251,23 +269,14 @@ export default function AdminPage() {
     [amountColones],
   );
 
-  const searchCustomers = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const query = customerQuery.trim();
-
-    if (!query) {
-      setActionError("Escribí el nombre, correo, WhatsApp o código del cliente.");
-      return;
-    }
-
+  const loadCustomers = async (page = 1, query = customerQuery.trim()) => {
     setCustomerLoading(true);
     setActionError("");
     setMessage("");
-    setSelectedCustomer(null);
 
     try {
       const response = await fetch(
-        `${API_URL}/api/admin/customers?q=${encodeURIComponent(query)}`,
+        `${API_URL}/api/admin/customers?q=${encodeURIComponent(query)}&page=${page}&pageSize=50`,
         { cache: "no-store", headers: { "x-admin-key": adminKey } },
       );
       const result = await response.json();
@@ -277,12 +286,100 @@ export default function AdminPage() {
       }
 
       setCustomers(result.customers || []);
+      setCustomerPage(result.pagination?.page || 1);
+      setCustomerTotal(result.pagination?.total || 0);
+      setCustomerTotalPages(result.pagination?.totalPages || 1);
       if (!(result.customers || []).length) {
         setMessage("No encontramos clientes con esos datos.");
       }
     } catch (error) {
       setCustomers([]);
       setActionError(error instanceof Error ? error.message : "No se pudieron buscar los clientes.");
+    } finally {
+      setCustomerLoading(false);
+    }
+  };
+
+  const searchCustomers = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSelectedCustomer(null);
+    await loadCustomers(1);
+  };
+
+  const openEditCustomer = (customer: Customer) => {
+    setEditingCustomer(customer);
+    setCustomerForm({
+      name: customer.name,
+      email: customer.email,
+      phone: customer.phone,
+      purchasePoints: String(customer.purchasePoints),
+      referralPoints: String(customer.referralPoints),
+    });
+    setActionError("");
+    setMessage("");
+  };
+
+  const saveCustomer = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!editingCustomer || !customerForm) return;
+
+    setCustomerLoading(true);
+    setActionError("");
+    setMessage("");
+
+    try {
+      const response = await fetch(`${API_URL}/api/admin/customers/${editingCustomer.id}`, {
+        method: "PATCH",
+        headers: headers(),
+        body: JSON.stringify({
+          ...customerForm,
+          purchasePoints: Number(customerForm.purchasePoints),
+          referralPoints: Number(customerForm.referralPoints),
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "No se pudo actualizar el cliente.");
+
+      const updated = result.customer as Customer;
+      setCustomers((current) => current.map((customer) => customer.id === updated.id ? updated : customer));
+      setSelectedCustomer((current) => current?.id === updated.id ? updated : current);
+      setEditingCustomer(null);
+      setCustomerForm(null);
+      setMessage(`Cliente ${updated.name} actualizado correctamente.`);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "No se pudo actualizar el cliente.");
+    } finally {
+      setCustomerLoading(false);
+    }
+  };
+
+  const deleteCustomer = async (customer: Customer) => {
+    const confirmed = window.confirm(
+      `¿Eliminar definitivamente a ${customer.name}? Esta acción también borrará su historial de puntos y no se puede deshacer.`,
+    );
+    if (!confirmed) return;
+
+    setCustomerLoading(true);
+    setActionError("");
+    setMessage("");
+
+    try {
+      const response = await fetch(`${API_URL}/api/admin/customers/${customer.id}`, {
+        method: "DELETE",
+        headers: { "x-admin-key": adminKey },
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "No se pudo eliminar el cliente.");
+
+      if (selectedCustomer?.id === customer.id) setSelectedCustomer(null);
+      if (editingCustomer?.id === customer.id) {
+        setEditingCustomer(null);
+        setCustomerForm(null);
+      }
+      await loadCustomers(customerPage);
+      setMessage(`Cliente ${customer.name} eliminado.`);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : "No se pudo eliminar el cliente.");
     } finally {
       setCustomerLoading(false);
     }
@@ -683,7 +780,7 @@ export default function AdminPage() {
             </button>
           </form>
 
-          <a href="/" style={styles.backLink}>← Volver al sitio</a>
+          <Link href="/" style={styles.backLink}>← Volver al sitio</Link>
         </section>
       </main>
     );
@@ -731,12 +828,121 @@ export default function AdminPage() {
           </button>
           <button
             type="button"
+            className={`${responsive.navButton} ${activeSection === "customers" ? responsive.navButtonActive : ""}`}
+            onClick={() => {
+              setActiveSection("customers");
+              void loadCustomers(1);
+            }}
+          >
+            Clientes registrados
+          </button>
+          <button
+            type="button"
             className={`${responsive.navButton} ${activeSection === "points" ? responsive.navButtonActive : ""}`}
-            onClick={() => setActiveSection("points")}
+            onClick={() => {
+              setActiveSection("points");
+              void loadCustomers(1);
+            }}
           >
             Agregar puntos
           </button>
         </nav>
+
+        {activeSection === "customers" && (
+          <section className={responsive.pointsPanel}>
+            <div className={responsive.customerHeading}>
+              <div>
+                <p style={styles.eyebrow}>Club Zénit</p>
+                <h2 style={styles.panelTitle}>Clientes registrados</h2>
+                <p style={styles.pageLead}>
+                  Consultá la lista completa, los puntos disponibles y administrá cada cuenta.
+                </p>
+              </div>
+              <strong className={responsive.customerCount}>{customerTotal} clientes</strong>
+            </div>
+
+            <form className={responsive.searchForm} onSubmit={searchCustomers}>
+              <input
+                value={customerQuery}
+                onChange={(event) => setCustomerQuery(event.target.value)}
+                placeholder="Buscar por nombre, correo, WhatsApp o código…"
+                aria-label="Buscar en la lista de clientes"
+                style={styles.searchInput}
+              />
+              <button type="submit" style={styles.primaryButton} disabled={customerLoading}>
+                {customerLoading ? "Cargando…" : "Buscar"}
+              </button>
+            </form>
+
+            {(message || actionError) && (
+              <div style={actionError ? styles.alertError : styles.alertSuccess}>
+                {actionError || message}
+              </div>
+            )}
+
+            <div className={responsive.customerTableWrap}>
+              <table className={responsive.customerTable}>
+                <thead>
+                  <tr>
+                    <th>Cliente</th>
+                    <th>Contacto</th>
+                    <th>Compras</th>
+                    <th>Referidos</th>
+                    <th>Total</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {customers.map((customer) => (
+                    <tr key={customer.id}>
+                      <td data-label="Cliente"><strong>{customer.name}</strong><small>{customer.customerId}</small></td>
+                      <td data-label="Contacto"><span>{customer.email}</span><small>{customer.phone}</small></td>
+                      <td data-label="Compras">{customer.purchasePoints}</td>
+                      <td data-label="Referidos">{customer.referralPoints}</td>
+                      <td data-label="Total"><strong className={responsive.tablePoints}>{customer.totalPoints}</strong></td>
+                      <td data-label="Acciones">
+                        <div className={responsive.customerActions}>
+                          <button type="button" onClick={() => openEditCustomer(customer)}>Editar</button>
+                          <button type="button" className={responsive.deleteButton} onClick={() => void deleteCustomer(customer)}>Eliminar</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {customerTotalPages > 1 && (
+              <div className={responsive.pagination}>
+                <button type="button" disabled={customerLoading || customerPage <= 1} onClick={() => void loadCustomers(customerPage - 1)}>Anterior</button>
+                <span>Página {customerPage} de {customerTotalPages}</span>
+                <button type="button" disabled={customerLoading || customerPage >= customerTotalPages} onClick={() => void loadCustomers(customerPage + 1)}>Siguiente</button>
+              </div>
+            )}
+
+            {editingCustomer && customerForm && (
+              <div className={responsive.editOverlay} role="dialog" aria-modal="true" aria-labelledby="edit-customer-title">
+                <form className={responsive.editCustomerForm} onSubmit={saveCustomer}>
+                  <div className={responsive.editFormHeading}>
+                    <div><small>Editar cliente</small><h3 id="edit-customer-title">{editingCustomer.name}</h3></div>
+                    <button type="button" aria-label="Cerrar editor" onClick={() => { setEditingCustomer(null); setCustomerForm(null); }}>×</button>
+                  </div>
+                  <label style={styles.label}>Nombre<input required minLength={2} maxLength={120} value={customerForm.name} onChange={(event) => setCustomerForm({ ...customerForm, name: event.target.value })} style={styles.input} /></label>
+                  <label style={styles.label}>Correo<input required type="email" value={customerForm.email} onChange={(event) => setCustomerForm({ ...customerForm, email: event.target.value })} style={styles.input} /></label>
+                  <label style={styles.label}>WhatsApp<input required minLength={7} maxLength={30} value={customerForm.phone} onChange={(event) => setCustomerForm({ ...customerForm, phone: event.target.value })} style={styles.input} /></label>
+                  <div className={responsive.pointFields}>
+                    <label style={styles.label}>Puntos por compras<input required type="number" min="0" value={customerForm.purchasePoints} onChange={(event) => setCustomerForm({ ...customerForm, purchasePoints: event.target.value })} style={styles.input} /></label>
+                    <label style={styles.label}>Puntos por referidos<input required type="number" min="0" value={customerForm.referralPoints} onChange={(event) => setCustomerForm({ ...customerForm, referralPoints: event.target.value })} style={styles.input} /></label>
+                  </div>
+                  <div className={responsive.editFormActions}>
+                    <button type="button" onClick={() => { setEditingCustomer(null); setCustomerForm(null); }}>Cancelar</button>
+                    <button type="submit" style={styles.primaryButton} disabled={customerLoading}>{customerLoading ? "Guardando…" : "Guardar cambios"}</button>
+                  </div>
+                </form>
+              </div>
+            )}
+          </section>
+        )}
 
         {activeSection === "points" && (
           <section className={responsive.pointsPanel}>
