@@ -322,8 +322,8 @@ export default function Home() {
           <h1><span>El punto máximo</span><em>de tu belleza.</em></h1>
 
           <div className="hero-actions">
-            <Link className="button" href="/reservar">Reservar cita <b>→</b></Link>
-            <Link className="button button-ghost" href="/tienda">Explorar tienda</Link>
+            <Link className="button" href="/registro">Crear cuenta <b>→</b></Link>
+            <Link className="button button-ghost" href="/login">Ingresar</Link>
           </div>
           <div className="trust-row">
             <span><b>✓</b> Atención personalizada</span>
