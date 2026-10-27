@@ -291,3 +291,22 @@
     gap: 14px;
   }
 }
+
+.responseForm,
+.proposal {
+  margin-top: 18px;
+  border: 1px solid #bacbd9;
+  border-radius: 18px;
+  padding: 18px;
+  background: linear-gradient(140deg, #fff, #e7eff6);
+  min-width: 0;
+}
+.responseForm p,
+.proposal p {
+  font-size: 13px;
+  line-height: 1.6;
+}
+.appointmentCard:target {
+  outline: 3px solid #8ba9c2;
+  outline-offset: 3px;
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState, useRef } from "react";
 import Link from "next/link";
 import AvailabilityPicker from "../../src/components/AvailabilityPicker";
 import styles from "./reservar.module.css";
@@ -42,16 +42,20 @@ function formatPrice(value: number) {
 
 export default function ReservarPage() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [catalogCategories, setCatalogCategories] =
-    useState<ServiceCategory[]>([]);
+  const [catalogCategories, setCatalogCategories] = useState<ServiceCategory[]>(
+    [],
+  );
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [alreadyQuoted, setAlreadyQuoted] = useState(false);
   const [selectedQuotedIds, setSelectedQuotedIds] = useState<string[]>([]);
+  const [slotReady, setSlotReady] = useState(false);
+  const feedbackRef = useRef<HTMLDivElement>(null);
+  const submittingRef = useRef(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [bookingError, setBookingError] = useState("");
   const [requestKey, setRequestKey] = useState("");
-  const [needsLogin,setNeedsLogin]=useState(false);
+  const [needsLogin, setNeedsLogin] = useState(false);
 
   useEffect(() => {
     const loadServices = async () => {
@@ -67,7 +71,9 @@ export default function ReservarPage() {
           setCatalogCategories(data.categories);
         }
       } catch {
-        setBookingError("No se pudieron cargar los servicios vigentes. Actualizá la página o contactá al salón.");
+        setBookingError(
+          "No se pudieron cargar los servicios vigentes. Actualizá la página o contactá al salón.",
+        );
       }
     };
 
@@ -111,12 +117,16 @@ export default function ReservarPage() {
   }, [reservableServices]);
 
   const selectedServices = useMemo(
-    () => reservableServices.filter((service) => selectedIds.includes(service.id)),
+    () =>
+      reservableServices.filter((service) => selectedIds.includes(service.id)),
     [reservableServices, selectedIds],
   );
 
   const selectedQuotedServices = useMemo(
-    () => quotedServices.filter((service) => selectedQuotedIds.includes(service.id)),
+    () =>
+      quotedServices.filter((service) =>
+        selectedQuotedIds.includes(service.id),
+      ),
     [quotedServices, selectedQuotedIds],
   );
 
@@ -127,7 +137,10 @@ export default function ReservarPage() {
       current.push(service);
       groups.set(service.category, current);
     }
-    return [...groups.entries()].map(([name, services]) => ({ name, services }));
+    return [...groups.entries()].map(([name, services]) => ({
+      name,
+      services,
+    }));
   }, [reservableServices]);
 
   const quotedGroups = useMemo(() => {
@@ -137,7 +150,10 @@ export default function ReservarPage() {
       current.push(service);
       groups.set(service.category, current);
     }
-    return [...groups.entries()].map(([name, services]) => ({ name, services }));
+    return [...groups.entries()].map(([name, services]) => ({
+      name,
+      services,
+    }));
   }, [quotedServices]);
 
   const total = useMemo(
@@ -175,7 +191,11 @@ export default function ReservarPage() {
   const submitReservation = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!hasAnyService) return;
+    if (submittingRef.current || submitted) return;
+    if (!hasAnyService) {
+      setBookingError("Elegí al menos un servicio.");
+      return;
+    }
 
     const form = new FormData(event.currentTarget);
 
@@ -205,9 +225,13 @@ export default function ReservarPage() {
       "",
       selectedServices.length ? "Servicios seleccionados:" : "",
       ...fixedLines,
-      selectedServices.length ? `Total seleccionado: ${formatPrice(total)}` : "",
+      selectedServices.length
+        ? `Total seleccionado: ${formatPrice(total)}`
+        : "",
       selectedQuotedServices.length ? "" : "",
-      selectedQuotedServices.length ? "Servicios cotizados previamente por WhatsApp:" : "",
+      selectedQuotedServices.length
+        ? "Servicios cotizados previamente por WhatsApp:"
+        : "",
       ...quotedLines,
       selectedQuotedServices.length
         ? "Estos servicios ya fueron cotizados previamente con Zénit."
@@ -221,25 +245,100 @@ export default function ReservarPage() {
       .filter(Boolean)
       .join("\n");
 
-    setBookingError(""); setNeedsLogin(false); setSubmitting(true); setSubmitted(false);
+    setBookingError("");
+    setNeedsLogin(false);
+    setSubmitting(true);
+    setSubmitted(false);
+    submittingRef.current = true;
     try {
       if (selectedQuotedServices.length) {
-        const response = await fetch(`${API_URL}/api/service-requests`, {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,phone,service:[...selectedServices,...selectedQuotedServices].map(s=>s.name).join(" + ").slice(0,120),details:notes || "Solicitud de cita con servicios cotizados previamente",preferredDate:date,preferredTime:time})});
-        const result=await response.json();if(!response.ok)throw Error(result.error || "No se pudo guardar la solicitud.");
-        window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`,"_blank","noopener,noreferrer");
+        const response = await fetch(`${API_URL}/api/service-requests`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name,
+            phone,
+            service: [...selectedServices, ...selectedQuotedServices]
+              .map((s) => s.name)
+              .join(" + ")
+              .slice(0, 120),
+            details:
+              notes || "Solicitud de cita con servicios cotizados previamente",
+            preferredDate: date,
+            preferredTime: time,
+          }),
+        });
+        const result = await response.json();
+        if (!response.ok)
+          throw Error(result.error || "No se pudo guardar la solicitud.");
+        window.open(
+          `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`,
+          "_blank",
+          "noopener,noreferrer",
+        );
       } else {
-        if(!time)throw Error("Elegí un horario disponible de la agenda.");
-        const sessionResponse=await fetch(`${API_URL}/api/auth/session`,{cache:"no-store"});
-        if(!sessionResponse.ok)throw Error("No se pudo comprobar la sesión. Reintentá.");
-        if(!(await sessionResponse.json()).authenticated){setNeedsLogin(true);throw Error("Ingresá o creá tu cuenta para guardar esta cita.");}
-        const key=requestKey || crypto.randomUUID();setRequestKey(key);
-        const response=await fetch(`${API_URL}/api/agenda/appointments`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({date,time,services:selectedIds,notes,requestKey:key})});
-        const result=await response.json();if(!response.ok){if(response.status===401)setNeedsLogin(true);if(response.status<500)setRequestKey("");throw Error(response.status===401?"Ingresá o creá tu cuenta para guardar esta cita.":result.error || "No se pudo reservar.");}
+        if (!time || !slotReady) {
+          document.getElementById("booking-availability")?.focus();
+          document
+            .getElementById("booking-availability")
+            ?.scrollIntoView({ behavior: "smooth", block: "center" });
+          throw Error(
+            "Elegí una fecha y una hora disponible en el calendario antes de enviar.",
+          );
+        }
+        const sessionResponse = await fetch(`${API_URL}/api/auth/session`, {
+          cache: "no-store",
+        });
+        if (!sessionResponse.ok)
+          throw Error("No se pudo comprobar la sesión. Reintentá.");
+        if (!(await sessionResponse.json()).authenticated) {
+          setNeedsLogin(true);
+          throw Error("Ingresá o creá tu cuenta para guardar esta cita.");
+        }
+        const key = requestKey || crypto.randomUUID();
+        setRequestKey(key);
+        const response = await fetch(`${API_URL}/api/agenda/appointments`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            date,
+            time,
+            services: selectedIds,
+            notes,
+            requestKey: key,
+          }),
+        });
+        const result = await response.json();
+        if (!response.ok) {
+          if (response.status === 401) setNeedsLogin(true);
+          if (response.status < 500) setRequestKey("");
+          throw Error(
+            response.status === 401
+              ? "Ingresá o creá tu cuenta para guardar esta cita."
+              : result.error || "No se pudo reservar.",
+          );
+        }
       }
-      setSubmitted(true);setRequestKey("");
-    } catch(error){setBookingError(error instanceof Error?error.message:"No se pudo conectar con el salón.");}
-    finally{setSubmitting(false);}
-
+      setSubmitted(true);
+      setRequestKey("");
+    } catch (error) {
+      setBookingError(
+        error instanceof Error
+          ? error.message
+          : "No se pudo conectar con el salón.",
+      );
+    } finally {
+      setSubmitting(false);
+      submittingRef.current = false;
+      setTimeout(
+        () =>
+          feedbackRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          }),
+        0,
+      );
+    }
   };
 
   return (
@@ -270,14 +369,28 @@ export default function ReservarPage() {
           className={menuOpen ? "nav-open" : ""}
           aria-label="Navegación principal"
         >
-          <Link href="/" onClick={() => setMenuOpen(false)}>Inicio</Link>
-          <Link href="/registro" onClick={() => setMenuOpen(false)}>Registro</Link>
-          <Link href="/tienda" onClick={() => setMenuOpen(false)}>Tienda</Link>
-          <Link href="/servicios" onClick={() => setMenuOpen(false)}>Servicios</Link>
-          <Link className="active" href="/reservar" onClick={() => setMenuOpen(false)}>
+          <Link href="/" onClick={() => setMenuOpen(false)}>
+            Inicio
+          </Link>
+          <Link href="/registro" onClick={() => setMenuOpen(false)}>
+            Registro
+          </Link>
+          <Link href="/tienda" onClick={() => setMenuOpen(false)}>
+            Tienda
+          </Link>
+          <Link href="/servicios" onClick={() => setMenuOpen(false)}>
+            Servicios
+          </Link>
+          <Link
+            className="active"
+            href="/reservar"
+            onClick={() => setMenuOpen(false)}
+          >
             Reservar
           </Link>
-          <Link href="/nosotros" onClick={() => setMenuOpen(false)}>Nosotros</Link>
+          <Link href="/nosotros" onClick={() => setMenuOpen(false)}>
+            Nosotros
+          </Link>
         </nav>
 
         <div className="header-actions">
@@ -306,14 +419,20 @@ export default function ReservarPage() {
           </h1>
 
           <p>
-            Reservá servicios con tarifa definida o agendá los tintes y tratamientos
-            que ya cotizaste previamente por WhatsApp.
+            Reservá servicios con tarifa definida o agendá los tintes y
+            tratamientos que ya cotizaste previamente por WhatsApp.
           </p>
 
           <div className={styles.heroTrust}>
-            <span><b>✓</b> Selección múltiple</span>
-            <span><b>✓</b> Cotizaciones previas</span>
-            <span><b>✓</b> Confirmación por WhatsApp</span>
+            <span>
+              <b>✓</b> Selección múltiple
+            </span>
+            <span>
+              <b>✓</b> Cotizaciones previas
+            </span>
+            <span>
+              <b>✓</b> Respuesta por correo
+            </span>
           </div>
         </div>
 
@@ -338,8 +457,9 @@ export default function ReservarPage() {
           </div>
 
           <p>
-            Podés combinar varios servicios con tarifa definida y también agregar
-            tintes o tratamientos que ya hayan sido cotizados previamente.
+            Podés combinar varios servicios con tarifa definida y también
+            agregar tintes o tratamientos que ya hayan sido cotizados
+            previamente.
           </p>
         </div>
 
@@ -356,7 +476,9 @@ export default function ReservarPage() {
 
             <div className={styles.serviceGroups}>
               {reservableGroups.map((group) => {
-                const uniquePrices = [...new Set(group.services.map((service) => service.price))];
+                const uniquePrices = [
+                  ...new Set(group.services.map((service) => service.price)),
+                ];
                 const groupPrice =
                   uniquePrices.length === 1
                     ? `${formatPrice(uniquePrices[0])}${group.services.length > 1 ? " c/u" : ""}`
@@ -366,7 +488,11 @@ export default function ReservarPage() {
                   <div className={styles.serviceGroup} key={group.name}>
                     <div className={styles.groupTitle}>
                       <div>
-                        <small>{group.name.toLowerCase().includes("lavado") ? "Combo Tratamiento Completo" : "Servicios del salón"}</small>
+                        <small>
+                          {group.name.toLowerCase().includes("lavado")
+                            ? "Combo Tratamiento Completo"
+                            : "Servicios del salón"}
+                        </small>
                         <h4>{group.name}</h4>
                       </div>
                       <span>{groupPrice}</span>
@@ -415,7 +541,9 @@ export default function ReservarPage() {
                   <input
                     type="checkbox"
                     checked={alreadyQuoted}
-                    onChange={(event) => handleQuotedChange(event.target.checked)}
+                    onChange={(event) =>
+                      handleQuotedChange(event.target.checked)
+                    }
                   />
 
                   <span className={styles.quotedCheck}>
@@ -444,7 +572,9 @@ export default function ReservarPage() {
                         <strong>{group.name}</strong>
                         <div className={styles.quotedGrid}>
                           {group.services.map((service) => {
-                            const selected = selectedQuotedIds.includes(service.id);
+                            const selected = selectedQuotedIds.includes(
+                              service.id,
+                            );
 
                             return (
                               <label
@@ -456,7 +586,9 @@ export default function ReservarPage() {
                                 <input
                                   type="checkbox"
                                   checked={selected}
-                                  onChange={() => toggleQuotedService(service.id)}
+                                  onChange={() =>
+                                    toggleQuotedService(service.id)
+                                  }
                                 />
                                 <span>{selected ? "✓" : ""}</span>
                                 <strong>{service.name}</strong>
@@ -474,7 +606,9 @@ export default function ReservarPage() {
             <div className={styles.totalBar}>
               <div>
                 <small>Servicios seleccionados</small>
-                <strong>{selectedServices.length + selectedQuotedServices.length}</strong>
+                <strong>
+                  {selectedServices.length + selectedQuotedServices.length}
+                </strong>
               </div>
 
               <div>
@@ -493,32 +627,47 @@ export default function ReservarPage() {
             </div>
 
             <form className={styles.form} onSubmit={submitReservation}>
-              {selectedQuotedServices.length > 0 ? <><label>
-                Nombre completo
-                <input
-                  name="name"
-                  type="text"
-                  required
-                  autoComplete="name"
-                  placeholder="Ej. María González"
-                />
-              </label>
+              {selectedQuotedServices.length > 0 ? (
+                <>
+                  <label>
+                    Nombre completo
+                    <input
+                      name="name"
+                      type="text"
+                      required
+                      autoComplete="name"
+                      placeholder="Ej. María González"
+                    />
+                  </label>
 
-              <label>
-                WhatsApp
-                <input
-                  name="phone"
-                  type="tel"
-                  inputMode="tel"
-                  required
-                  autoComplete="tel"
-                  placeholder="Ej. 7124 6337"
-                />
-              </label>
-
-              </> : <p>Tu cita se vinculará al nombre y WhatsApp de tu cuenta registrada.</p>}
-              {selectedQuotedServices.length>0 && <p>Para los servicios cotizados, el salón acordará la duración antes de confirmar el cupo.</p>}
-              <AvailabilityPicker services={selectedQuotedServices.length ? [] : selectedIds}/>
+                  <label>
+                    WhatsApp
+                    <input
+                      name="phone"
+                      type="tel"
+                      inputMode="tel"
+                      required
+                      autoComplete="tel"
+                      placeholder="Ej. 7124 6337"
+                    />
+                  </label>
+                </>
+              ) : (
+                <p>
+                  Tu cita se vinculará al nombre y WhatsApp de tu cuenta
+                  registrada.
+                </p>
+              )}
+              {selectedQuotedServices.length > 0 && (
+                <p>
+                  Para los servicios cotizados, el salón acordará la duración
+                  antes de confirmar el cupo.
+                </p>
+              )}
+              <AvailabilityPicker
+                services={selectedQuotedServices.length ? [] : selectedIds}
+                onReady={setSlotReady}
+              />
 
               <label>
                 Notas para Zénit
@@ -571,25 +720,66 @@ export default function ReservarPage() {
                 </div>
               </div>
 
-              {submitted && (
-                <p className={styles.successMessage}>
-                  {selectedQuotedServices.length ? "Solicitud guardada. Coordiná la duración y el horario con el salón por WhatsApp." : <>Tu espacio quedó apartado mientras el salón confirma. Revisá el estado en <Link href="/mi-cuenta">Mis citas</Link>.</>}
+              <div
+                ref={feedbackRef}
+                className={styles.bookingFeedback}
+                aria-live="polite"
+                tabIndex={-1}
+              >
+                {submitted && (
+                  <p role="status" className={styles.successMessage}>
+                    {selectedQuotedServices.length ? (
+                      "Solicitud guardada. Coordiná la duración y el horario con el salón por WhatsApp."
+                    ) : (
+                      <>
+                        <strong>✓ ¡Solicitud enviada con éxito!</strong>
+                        <br />
+                        Apartamos tu espacio mientras Zénit responde. Recibirás
+                        la confirmación o respuesta del salón en el correo de tu
+                        cuenta. También podés verla en{" "}
+                        <Link href="/mi-cuenta">Mis citas</Link>.
+                      </>
+                    )}
+                  </p>
+                )}
+
+                {bookingError && (
+                  <p role="alert" className={styles.bookingError}>
+                    {bookingError}
+                  </p>
+                )}
+                {needsLogin && (
+                  <Link
+                    className="button"
+                    href={`/login?returnTo=${encodeURIComponent(`/reservar?servicios=${selectedIds.join(",")}`)}`}
+                  >
+                    Ingresar o crear mi cuenta →
+                  </Link>
+                )}
+              </div>
+              {!submitted && !selectedQuotedServices.length && !slotReady && (
+                <p className={styles.formNote}>
+                  Primero elegí un día y una hora en el calendario.
                 </p>
               )}
-
-              {bookingError && <p role="alert" className={styles.formNote}>{bookingError}</p>}
-              {needsLogin&&<Link className="button" href={`/login?returnTo=${encodeURIComponent(`/reservar?servicios=${selectedIds.join(',')}`)}`}>Ingresar o crear mi cuenta →</Link>}
               <button
                 className={styles.submitButton}
                 type="submit"
                 disabled={!hasAnyService || submitting || submitted}
               >
-                {submitting ? "Guardando…" : submitted ? "Solicitud guardada" : selectedQuotedServices.length ? "Coordinar con el salón" : "Solicitar mi cita"}
+                {submitting
+                  ? "Guardando…"
+                  : submitted
+                    ? "Solicitud guardada"
+                    : selectedQuotedServices.length
+                      ? "Coordinar con el salón"
+                      : "Solicitar mi cita"}
                 <span aria-hidden="true">→</span>
               </button>
 
               <p className={styles.formNote}>
-                Las citas requieren confirmación del salón. Los cupos se validan nuevamente al guardar.
+                Las citas requieren confirmación del salón. Los cupos se validan
+                nuevamente al guardar.
               </p>
             </form>
           </section>

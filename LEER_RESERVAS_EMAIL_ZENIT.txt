@@ -1,0 +1,55 @@
+ZÉNIT SALÓN · RESERVAS Y RESPUESTAS POR CORREO
+Entrega incremental sobre el calendario premium ya publicado.
+
+Copiar los archivos completos de cada ZIP en la raíz de su repositorio,
+conservando carpetas y reemplazando los incluidos. No eliminar el resto.
+Primero backend CON MIGRACIÓN; después frontend. No aplicar ZIP anteriores.
+No cambia contraseñas ni requiere ejecutar owner:provision o catalog:seed.
+
+COMPORTAMIENTO
+1. La clienta elige servicio, día y una hora disponible e ingresa con su cuenta.
+2. Al guardar aparece un mensaje visible de solicitud enviada con éxito.
+3. La reserva y sus avisos se guardan juntos. Se aparta el cupo mientras la dueña
+   responde, sujeto al vencimiento configurado en la agenda.
+4. La clienta recibe acuse por correo y la dueña aviso de nueva reserva.
+5. Los botones del correo abren la cita concreta en /admin. La dueña debe ingresar
+   con su cuenta; abrir el enlace NO confirma ni cancela por sí solo.
+6. Puede confirmar, o rechazar escribiendo un motivo y ofreciendo opcionalmente
+   fecha/hora alternativas. El rechazo libera la cita original y notifica a la
+   clienta con el mensaje. La confirmación también genera correo para la clienta.
+7. La clienta ve la respuesta en Mis citas y puede aceptar la propuesta allí.
+   Se vuelve a validar el cupo y se crea una nueva solicitud PENDING para confirmar.
+   La propuesta sola no aparta espacio. El doble clic no crea citas duplicadas.
+8. Si falla el proveedor de correo, la reserva permanece guardada; hay reintentos
+   automáticos. El panel muestra conteos de notificaciones pendientes/con fallos.
+
+SOLUCIÓN DEL 409
+El código de disponibilidad rechazaba servicios sin duración. La nueva migración
+asigna 60 minutos iniciales SOLO a servicios RESERVE cuya duración estaba nula.
+No reemplaza tiempos ya configurados ni modifica servicios QUOTE. La dueña debe
+revisar las duraciones reales en Abrir horarios ANTES de recibir reservas reales.
+Los nuevos servicios sin duración muestran una explicación y no se pueden reservar
+incompletos. Una colisión real de horario sigue devolviendo 409 por seguridad.
+
+Las solicitudes de cotización por WhatsApp conservan su flujo de coordinación;
+no son reservas de agenda y no se incorporan automáticamente a estos avisos.
+No hay cambios en el POS, cuentas por cobrar, puntos, stock ni cuentas existentes.
+
+APLICACIÓN EN FRONTEND
+Base main: 765433c8a654f7158d3b38017d16d9e2fd35cc78
+
+1. Aplicar primero backend, migración y configuración de correo.
+2. Copiar los archivos de este ZIP en la raíz de Zenit/zenit-salon-demo.
+3. Validar:
+   npm ci --include=dev
+   npm run lint
+   npm run build
+4. Hacer commit/push y esperar el despliegue de Vercel. No hay variables nuevas
+   de frontend ni claves de correo que deban copiarse a Vercel.
+5. Recargar con Ctrl+F5. Probar Solicitar mi cita sin elegir hora: debe explicar
+   claramente lo que falta. Luego seleccionar día/hora y enviar con una cuenta.
+6. Comprobar el mensaje de éxito y la respuesta posterior en Mis citas.
+
+Los correos de la dueña abren /admin con día/cita seleccionados. El rechazo
+incluye formulario para motivo y fecha/hora opcionales. El enlace de la clienta
+abre Mis citas, donde aparece la respuesta y el botón Aceptar propuesta.

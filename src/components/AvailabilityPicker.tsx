@@ -6,8 +6,10 @@ import calendar from "./calendar.module.css";
 type Slot = { time: string; available: boolean };
 export default function AvailabilityPicker({
   services,
+  onReady,
 }: {
   services: string[];
+  onReady?: (ready: boolean) => void;
 }) {
   const [date, setDate] = useState(salonToday);
   const [selected, setSelected] = useState("");
@@ -34,7 +36,9 @@ export default function AvailabilityPicker({
         if (!r.ok) throw Error(d.error);
         if (live) {
           setResult({ key, slots: d.slots });
-          if (!d.slots.length)
+          if (d.bookingUnavailableReason)
+            setMessage(d.bookingUnavailableReason);
+          else if (!d.slots.length)
             setMessage(
               "Este día no tiene cupos habilitados. Elegí otro día del calendario.",
             );
@@ -66,8 +70,15 @@ export default function AvailabilityPicker({
   const chosen = slots.some((s) => s.time === selected && s.available)
     ? selected
     : "";
+  useEffect(() => {
+    onReady?.(Boolean(chosen) && !loading && !message);
+  }, [chosen, loading, message, onReady]);
   return (
-    <div className={styles.availability}>
+    <div
+      id="booking-availability"
+      className={styles.availability}
+      tabIndex={-1}
+    >
       <SalonCalendar
         value={date}
         onChange={(d) => {
@@ -94,7 +105,7 @@ export default function AvailabilityPicker({
         </div>
         {loading && <p role="status">Buscando tu mejor horario…</p>}
         {message && (
-          <p role="status" className={styles.note}>
+          <p role="alert" className={styles.error}>
             {message}
           </p>
         )}

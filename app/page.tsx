@@ -254,7 +254,7 @@ export default function Home() {
       setProfile(result.customer);
       setAuthMessage("Sesión iniciada correctamente.");
       const next=new URLSearchParams(window.location.search).get("returnTo");
-      if(next){const target=new URL(next,window.location.origin);if(target.origin===window.location.origin&&target.pathname==='/reservar')router.replace(target.pathname+target.search);}
+      if(next){const target=new URL(next,window.location.origin);if(target.origin===window.location.origin&&['/reservar','/mi-cuenta'].includes(target.pathname))router.replace(target.pathname+target.search);}
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : "No pudimos iniciar sesión.");
     } finally {
@@ -473,7 +473,7 @@ export default function Home() {
             <p className="eyebrow"><span /> Club Zénit</p>
             <h2>{sessionLoading ? "Cargando tu cuenta..." : "Primero ingresá a tu cuenta."}</h2>
             <p>{sessionLoading ? "Estamos recuperando tu tarjeta digital." : "Así podremos mostrar tu tarjeta, tus puntos y tu historial."}</p>
-            <div><Link className="button" href="/login">Ingresar →</Link><Link className="button button-ghost" href="/registro">Registrarme</Link></div>
+            <div><Link className="button" href="/login?returnTo=%2Fmi-cuenta">Ingresar →</Link><Link className="button button-ghost" href="/registro">Registrarme</Link></div>
           </div>
         ) : (
           <>

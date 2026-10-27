@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import styles from "./agenda.module.css";
 type Appointment = {
   id: string;
@@ -7,6 +7,9 @@ type Appointment = {
   endAt: string;
   status: string;
   expiresAt: string | null;
+  responseMessage?: string;
+  proposedStartAt?: string | null;
+  proposalAppointmentId?: string | null;
   services: { name: string }[];
 };
 type Order = {
@@ -30,6 +33,7 @@ export const localTime = (value: string) =>
     timeStyle: "short",
   });
 export default function MyActivity() {
+  const focused = useRef(false);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [error, setError] = useState("");
@@ -54,6 +58,18 @@ export default function MyActivity() {
       clearInterval(timer);
     };
   }, [load]);
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("appointment");
+    if (!focused.current && id && appointments.some((a) => a.id === id)) {
+      const timer = setTimeout(() => {
+        document
+          .getElementById(`appointment-${id}`)
+          ?.scrollIntoView({ behavior: "smooth", block: "center" });
+        focused.current = true;
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [appointments]);
   async function cancel(kind: string, id: string) {
     if (!window.confirm("¿Querés cancelar esta solicitud?")) return;
     try {
@@ -78,13 +94,58 @@ export default function MyActivity() {
       <h3>Mis citas</h3>
       {!appointments.length && <p>Todavía no tenés citas registradas.</p>}
       {appointments.map((a) => (
-        <article key={a.id} className={styles.card}>
+        <article id={`appointment-${a.id}`} key={a.id} className={styles.card}>
           <strong>{localTime(a.startAt)}</strong>
           <p>
             {a.services.map((s) => s.name).join(" + ") ||
               "Cita coordinada con el salón"}{" "}
             · {statusLabel[a.status]}
           </p>
+          {a.responseMessage && (
+            <p className={styles.note}>
+              <strong>Mensaje de Zénit:</strong> {a.responseMessage}
+            </p>
+          )}
+          {a.status === "CANCELLED" && a.proposedStartAt && (
+            <div className={styles.proposal}>
+              <strong>Otro momento para vos</strong>
+              <p>{localTime(a.proposedStartAt)}</p>
+              <p>
+                El cupo se comprueba al aceptar. La nueva solicitud requiere
+                confirmación.
+              </p>
+              {a.proposalAppointmentId ? (
+                <p>Ya aceptaste esta propuesta. Revisá tu nueva solicitud.</p>
+              ) : (
+                <button
+                  onClick={async (e) => {
+                    const button = e.currentTarget;
+                    button.disabled = true;
+                    try {
+                      const r = await fetch(
+                        `/api/backend/api/agenda/appointments/${a.id}/accept-proposal`,
+                        { method: "POST" },
+                      );
+                      const d = await r.json();
+                      if (!r.ok) throw Error(d.error);
+                      setError("");
+                      await load();
+                    } catch (err) {
+                      setError(
+                        err instanceof Error
+                          ? err.message
+                          : "No se pudo aceptar.",
+                      );
+                    } finally {
+                      button.disabled = false;
+                    }
+                  }}
+                >
+                  Aceptar propuesta
+                </button>
+              )}
+            </div>
+          )}
           {a.status === "PENDING" && a.expiresAt && (
             <small>
               El espacio se aparta hasta {localTime(a.expiresAt)} mientras el

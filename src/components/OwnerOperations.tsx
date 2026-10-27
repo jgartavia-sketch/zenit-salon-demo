@@ -20,6 +20,8 @@ type Appointment = {
   endAt: string;
   status: string;
   notes: string;
+  responseMessage?: string;
+  proposedStartAt?: string | null;
   services: { name: string }[];
 };
 type Service = {
@@ -63,6 +65,9 @@ async function api(path: string, method = "GET", body?: unknown) {
   return d;
 }
 export default function OwnerOperations() {
+  const [responding, setResponding] = useState("");
+  const [focusedAppointment, setFocusedAppointment] = useState("");
+  const [mailQueue, setMailQueue] = useState({ pending: 0, failed: 0 });
   const [tab, setTab] = useState("agenda");
   const [date, setDate] = useState(today);
   const loadSequence = useRef(0);
@@ -76,17 +81,19 @@ export default function OwnerOperations() {
   const [calendarRevision, setCalendarRevision] = useState(0);
   const load = useCallback(async () => {
     const sequence = ++loadSequence.current;
-    const [a, s, v, o] = await Promise.all([
+    const [a, s, v, o, m] = await Promise.all([
       api(`agenda/appointments?date=${date}`),
       api("agenda/settings"),
       api("agenda/services"),
       api("orders"),
+      api("agenda/notifications"),
     ]);
     if (sequence !== loadSequence.current) return;
     setAppointments(a.appointments);
     setSettings((current) => current || s.settings);
     setServices(v.services);
     setOrders(o.orders);
+    setMailQueue(m);
   }, [date]);
   useEffect(() => {
     const timer = setTimeout(
@@ -95,6 +102,40 @@ export default function OwnerOperations() {
     );
     return () => clearTimeout(timer);
   }, [load]);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const q = new URLSearchParams(window.location.search),
+        day = q.get("date"),
+        id = q.get("appointment");
+      if (
+        day &&
+        /^\d{4}-\d{2}-\d{2}$/.test(day) &&
+        !Number.isNaN(Date.parse(day + "T12:00:00Z")) &&
+        new Date(day + "T12:00:00Z").toISOString().slice(0, 10) === day
+      )
+        setDate(day);
+      if (id && /^[a-f0-9-]{36}$/.test(id)) {
+        setFocusedAppointment(id);
+        if (q.get("action") === "respond") setResponding(id);
+      }
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
+  useEffect(() => {
+    if (
+      focusedAppointment &&
+      appointments.some((a) => a.id === focusedAppointment)
+    ) {
+      const timer = setTimeout(
+        () =>
+          document
+            .getElementById(`appointment-${focusedAppointment}`)
+            ?.scrollIntoView({ behavior: "smooth", block: "center" }),
+        100,
+      );
+      return () => clearTimeout(timer);
+    }
+  }, [focusedAppointment, appointments]);
   // Refresh only live lists; never overwrite unsaved schedule settings.
   useEffect(() => {
     const timer = setInterval(() => {
@@ -183,6 +224,14 @@ export default function OwnerOperations() {
           Mi acceso
         </button>
       </nav>
+      {mailQueue.pending > 0 && (
+        <p className={styles.note} role="status">
+          Notificaciones por enviar: {mailQueue.pending}.
+          {mailQueue.failed > 0
+            ? " Hay correos en reintento. Revisá la configuración del correo si persiste."
+            : " Se enviarán en segundo plano."}
+        </p>
+      )}
       {error && (
         <p role="alert" className={styles.error}>
           {error}
@@ -198,6 +247,7 @@ export default function OwnerOperations() {
           <div className={styles.agendaShell}>
             <div className={styles.calendarSide}>
               <SalonCalendar
+                key={date.slice(0, 7)}
                 value={date}
                 onChange={setDate}
                 owner
@@ -334,6 +384,7 @@ export default function OwnerOperations() {
               {appointments.map((a) => (
                 <article
                   key={a.id}
+                  id={`appointment-${a.id}`}
                   className={`${styles.card} ${styles.appointmentCard} ${a.status === "PENDING" ? styles.pendingCard : ""}`}
                 >
                   <strong>
@@ -350,6 +401,17 @@ export default function OwnerOperations() {
                   <p>
                     {a.services.map((s) => s.name).join(" + ")} {a.notes}
                   </p>
+                  {a.responseMessage && (
+                    <p>
+                      <strong>Respuesta enviada:</strong> {a.responseMessage}
+                    </p>
+                  )}
+                  {a.proposedStartAt && (
+                    <p>
+                      Propuesta: {localTime(a.proposedStartAt)} · Sujeta a
+                      aceptación y cupo.
+                    </p>
+                  )}
                   {a.phone && (
                     <a
                       href={`https://wa.me/${a.phone.replace(/\D/g, "").length === 8 ? "506" : ""}${a.phone.replace(/\D/g, "")}`}
@@ -394,19 +456,80 @@ export default function OwnerOperations() {
                       <button
                         className={styles.danger}
                         disabled={busy}
-                        onClick={() => {
-                          if (confirm("¿Cancelar y liberar este cupo?"))
-                            void run(() =>
-                              api(`agenda/appointments/${a.id}`, "PATCH", {
-                                status: "CANCELLED",
-                              }),
-                            );
-                        }}
+                        onClick={() =>
+                          setResponding(responding === a.id ? "" : a.id)
+                        }
                       >
-                        Cancelar / liberar
+                        Rechazar / proponer otra fecha
                       </button>
                     )}
                   </div>
+                  {responding === a.id &&
+                    ["PENDING", "CONFIRMED", "BLOCKED"].includes(a.status) && (
+                      <form
+                        className={styles.responseForm}
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          const f = new FormData(e.currentTarget);
+                          void run(
+                            () =>
+                              api(`agenda/appointments/${a.id}`, "PATCH", {
+                                status: "CANCELLED",
+                                responseMessage: f.get("responseMessage"),
+                                ...(f.get("proposedDate") ||
+                                f.get("proposedTime")
+                                  ? {
+                                      proposedDate: f.get("proposedDate"),
+                                      proposedTime: f.get("proposedTime"),
+                                    }
+                                  : {}),
+                              }),
+                            "Respuesta guardada. El correo quedó en cola para la clienta.",
+                          );
+                        }}
+                      >
+                        <h3>Una respuesta con cuidado</h3>
+                        <label>
+                          Mensaje para la clienta
+                          <textarea
+                            name="responseMessage"
+                            required={Boolean(a.customerId)}
+                            minLength={2}
+                            maxLength={1000}
+                            placeholder="Contale por qué no es posible atenderla en ese horario."
+                          />
+                        </label>
+                        <p>
+                          Opcional: ofrecé otra fecha. No se reservará hasta que
+                          la clienta la acepte y se vuelva a comprobar el cupo.
+                        </p>
+                        <div className={styles.row}>
+                          <label>
+                            Fecha propuesta
+                            <input
+                              name="proposedDate"
+                              type="date"
+                              min={today()}
+                            />
+                          </label>
+                          <label>
+                            Hora propuesta
+                            <input name="proposedTime" type="time" />
+                          </label>
+                        </div>
+                        <div className={styles.row}>
+                          <button disabled={busy}>
+                            Enviar respuesta y liberar cita original
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setResponding("")}
+                          >
+                            Volver
+                          </button>
+                        </div>
+                      </form>
+                    )}
                   {["PENDING", "CONFIRMED"].includes(a.status) && (
                     <details>
                       <summary>Reprogramar cita</summary>

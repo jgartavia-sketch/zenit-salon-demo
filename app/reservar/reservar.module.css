@@ -10,13 +10,23 @@
   overflow: hidden;
   padding: 165px clamp(24px, 7vw, 110px) 78px;
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(280px, .55fr);
+  grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.55fr);
   align-items: end;
   gap: clamp(40px, 7vw, 110px);
   color: #fff;
   background:
-    radial-gradient(circle at 78% 18%, rgba(192,215,238,.17), transparent 28%),
-    linear-gradient(110deg, rgba(4,10,17,.96) 0%, rgba(8,19,31,.90) 42%, rgba(13,37,61,.73) 72%, rgba(15,45,75,.52) 100%);
+    radial-gradient(
+      circle at 78% 18%,
+      rgba(192, 215, 238, 0.17),
+      transparent 28%
+    ),
+    linear-gradient(
+      110deg,
+      rgba(4, 10, 17, 0.96) 0%,
+      rgba(8, 19, 31, 0.9) 42%,
+      rgba(13, 37, 61, 0.73) 72%,
+      rgba(15, 45, 75, 0.52) 100%
+    );
 }
 
 .hero::after {
@@ -24,7 +34,13 @@
   position: absolute;
   inset: auto 0 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,.78), rgba(122,170,215,.32), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.78),
+    rgba(122, 170, 215, 0.32),
+    transparent
+  );
 }
 
 .heroGlow {
@@ -35,17 +51,22 @@
   top: 45px;
   border-radius: 50%;
   pointer-events: none;
-  background: radial-gradient(circle, rgba(255,255,255,.20), rgba(105,155,201,.12) 36%, transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.2),
+    rgba(105, 155, 201, 0.12) 36%,
+    transparent 70%
+  );
   filter: blur(40px);
 }
 
 .heroGrid {
   position: absolute;
   inset: 0;
-  opacity: .075;
+  opacity: 0.075;
   background-image:
-    linear-gradient(rgba(255,255,255,.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,.06) 1px, transparent 1px);
+    linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
   background-size: 72px 72px;
   mask-image: linear-gradient(to right, #000, transparent 78%);
   pointer-events: none;
@@ -66,7 +87,7 @@
   font-family: var(--font-zenit-body), Arial, sans-serif;
   font-size: 9px;
   font-weight: 800;
-  letter-spacing: .2em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
 }
 
@@ -87,7 +108,7 @@
 
 .eyebrow span {
   background: #fff;
-  box-shadow: 0 0 10px rgba(255,255,255,.4);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
 }
 
 .eyebrowDark span {
@@ -103,8 +124,8 @@
   font-family: var(--font-zenit-display), Georgia, serif;
   font-size: clamp(50px, 6vw, 88px);
   font-weight: 500;
-  line-height: .92;
-  letter-spacing: -.045em;
+  line-height: 0.92;
+  letter-spacing: -0.045em;
 }
 
 .heroCopy h1 em {
@@ -147,7 +168,7 @@
 .heroCard {
   align-self: end;
   padding: 26px 0 5px 26px;
-  border-left: 1px solid rgba(255,255,255,.24);
+  border-left: 1px solid rgba(255, 255, 255, 0.24);
 }
 
 .heroCard small {
@@ -157,7 +178,7 @@
   font-family: var(--font-zenit-body), Arial, sans-serif;
   font-size: 8px;
   font-weight: 800;
-  letter-spacing: .16em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 
@@ -181,7 +202,11 @@
 .bookingSection {
   padding: 90px clamp(24px, 7vw, 110px) 100px;
   background:
-    radial-gradient(circle at 52% 0%, rgba(75,112,150,.08), transparent 30%),
+    radial-gradient(
+      circle at 52% 0%,
+      rgba(75, 112, 150, 0.08),
+      transparent 30%
+    ),
     #f5f8fb;
 }
 
@@ -203,8 +228,8 @@
   font-family: var(--font-zenit-display), Georgia, serif;
   font-size: clamp(40px, 4.6vw, 64px);
   font-weight: 600;
-  line-height: .94;
-  letter-spacing: -.04em;
+  line-height: 0.94;
+  letter-spacing: -0.04em;
 }
 
 .sectionHeading > p {
@@ -218,7 +243,7 @@
 
 .bookingLayout {
   display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(370px, .72fr);
+  grid-template-columns: minmax(0, 1.05fr) minmax(370px, 0.72fr);
   gap: 20px;
   align-items: start;
 }
@@ -227,12 +252,15 @@
 .formPanel {
   position: relative;
   overflow: hidden;
-  border: 1px solid rgba(11,34,58,.11);
+  border: 1px solid rgba(11, 34, 58, 0.11);
   border-radius: 25px;
-  background:
-    linear-gradient(145deg, rgba(255,255,255,.99), rgba(232,239,245,.95));
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.99),
+    rgba(232, 239, 245, 0.95)
+  );
   box-shadow:
-    0 18px 48px rgba(18,37,58,.08),
+    0 18px 48px rgba(18, 37, 58, 0.08),
     inset 0 1px 0 #fff;
 }
 
@@ -243,7 +271,13 @@
   inset: 0 0 auto;
   height: 1px;
   pointer-events: none;
-  background: linear-gradient(90deg, transparent, #fff, rgba(109,150,190,.28), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #fff,
+    rgba(109, 150, 190, 0.28),
+    transparent
+  );
 }
 
 .servicesPanel {
@@ -270,7 +304,7 @@
   font-family: var(--font-zenit-body), Arial, sans-serif;
   font-size: 8px;
   font-weight: 800;
-  letter-spacing: .15em;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
 }
 
@@ -298,7 +332,7 @@
 
 .serviceGroup {
   padding-top: 20px;
-  border-top: 1px solid rgba(13,45,80,.10);
+  border-top: 1px solid rgba(13, 45, 80, 0.1);
 }
 
 .groupTitle {
@@ -316,7 +350,7 @@
   font-family: var(--font-zenit-body), Arial, sans-serif;
   font-size: 8px;
   font-weight: 800;
-  letter-spacing: .13em;
+  letter-spacing: 0.13em;
   text-transform: uppercase;
 }
 
@@ -337,7 +371,7 @@
 
 .serviceList {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0,1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -347,18 +381,18 @@
   min-height: 74px;
   padding: 13px 14px;
   display: grid;
-  grid-template-columns: 28px minmax(0,1fr) auto;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
   align-items: center;
   gap: 11px;
-  border: 1px solid rgba(13,45,80,.10);
+  border: 1px solid rgba(13, 45, 80, 0.1);
   border-radius: 17px;
-  background: rgba(255,255,255,.72);
+  background: rgba(255, 255, 255, 0.72);
   cursor: pointer;
   transition:
-    transform .28s ease,
-    border-color .28s ease,
-    box-shadow .28s ease,
-    background .28s ease;
+    transform 0.28s ease,
+    border-color 0.28s ease,
+    box-shadow 0.28s ease,
+    background 0.28s ease;
 }
 
 .serviceRow::after {
@@ -372,35 +406,34 @@
   pointer-events: none;
   opacity: 0;
   transform: rotate(20deg);
-  background:
-    linear-gradient(
-      90deg,
-      transparent,
-      rgba(255,255,255,.15),
-      rgba(255,255,255,.96),
-      rgba(255,255,255,.15),
-      transparent
-    );
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.15),
+    rgba(255, 255, 255, 0.96),
+    rgba(255, 255, 255, 0.15),
+    transparent
+  );
   transition:
-    left 1.55s cubic-bezier(.2,.65,.25,1),
-    opacity .28s ease;
+    left 1.55s cubic-bezier(0.2, 0.65, 0.25, 1),
+    opacity 0.28s ease;
 }
 
 .serviceRow:hover {
   transform: translateY(-2px);
-  border-color: rgba(30,73,111,.23);
-  box-shadow: 0 12px 28px rgba(16,42,68,.08);
+  border-color: rgba(30, 73, 111, 0.23);
+  box-shadow: 0 12px 28px rgba(16, 42, 68, 0.08);
 }
 
 .serviceRow:hover::after {
   left: 145%;
-  opacity: .68;
+  opacity: 0.68;
 }
 
 .serviceSelected {
-  border-color: rgba(23,53,87,.40);
+  border-color: rgba(23, 53, 87, 0.4);
   background: linear-gradient(145deg, #fff, #e7eef5);
-  box-shadow: 0 13px 30px rgba(16,42,68,.10);
+  box-shadow: 0 13px 30px rgba(16, 42, 68, 0.1);
 }
 
 .serviceRow input {
@@ -416,7 +449,7 @@
   height: 28px;
   display: grid;
   place-items: center;
-  border: 1px solid rgba(13,45,80,.20);
+  border: 1px solid rgba(13, 45, 80, 0.2);
   border-radius: 50%;
   color: #fff;
   background: #fff;
@@ -464,21 +497,23 @@
   white-space: nowrap;
 }
 
-
 .quotedBlock {
   padding: 18px;
-  border: 1px solid rgba(13,45,80,.11);
+  border: 1px solid rgba(13, 45, 80, 0.11);
   border-radius: 19px;
-  background:
-    linear-gradient(145deg, rgba(255,255,255,.94), rgba(226,235,243,.82));
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.94),
+    rgba(226, 235, 243, 0.82)
+  );
   box-shadow:
     inset 0 1px 0 #fff,
-    0 10px 26px rgba(18,42,66,.05);
+    0 10px 26px rgba(18, 42, 66, 0.05);
 }
 
 .quotedToggle {
   display: grid;
-  grid-template-columns: 32px minmax(0,1fr);
+  grid-template-columns: 32px minmax(0, 1fr);
   align-items: center;
   gap: 12px;
   cursor: pointer;
@@ -496,7 +531,7 @@
   height: 32px;
   display: grid;
   place-items: center;
-  border: 1px solid rgba(13,45,80,.22);
+  border: 1px solid rgba(13, 45, 80, 0.22);
   border-radius: 50%;
   color: #fff;
   background: #fff;
@@ -530,7 +565,7 @@
 .quotedServices {
   margin-top: 17px;
   padding-top: 17px;
-  border-top: 1px solid rgba(13,45,80,.10);
+  border-top: 1px solid rgba(13, 45, 80, 0.1);
 }
 
 .quotedIntro small {
@@ -539,7 +574,7 @@
   font-family: var(--font-zenit-body), Arial, sans-serif;
   font-size: 7px;
   font-weight: 800;
-  letter-spacing: .13em;
+  letter-spacing: 0.13em;
   text-transform: uppercase;
 }
 
@@ -569,13 +604,13 @@
   font-family: var(--font-zenit-body), Arial, sans-serif;
   font-size: 8px;
   font-weight: 800;
-  letter-spacing: .09em;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
 }
 
 .quotedGrid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0,1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -583,22 +618,22 @@
   min-height: 45px;
   padding: 9px 11px;
   display: grid;
-  grid-template-columns: 23px minmax(0,1fr);
+  grid-template-columns: 23px minmax(0, 1fr);
   align-items: center;
   gap: 9px;
-  border: 1px solid rgba(13,45,80,.10);
+  border: 1px solid rgba(13, 45, 80, 0.1);
   border-radius: 13px;
-  background: rgba(255,255,255,.67);
+  background: rgba(255, 255, 255, 0.67);
   cursor: pointer;
   transition:
-    transform .25s ease,
-    border-color .25s ease,
-    background .25s ease;
+    transform 0.25s ease,
+    border-color 0.25s ease,
+    background 0.25s ease;
 }
 
 .quotedServiceRow:hover {
   transform: translateY(-1px);
-  border-color: rgba(30,73,111,.23);
+  border-color: rgba(30, 73, 111, 0.23);
 }
 
 .quotedServiceRow > span {
@@ -606,7 +641,7 @@
   height: 23px;
   display: grid;
   place-items: center;
-  border: 1px solid rgba(13,45,80,.18);
+  border: 1px solid rgba(13, 45, 80, 0.18);
   border-radius: 50%;
   color: #fff;
   background: #fff;
@@ -615,7 +650,7 @@
 }
 
 .quotedServiceSelected {
-  border-color: rgba(23,53,87,.35);
+  border-color: rgba(23, 53, 87, 0.35);
   background: linear-gradient(145deg, #fff, #e5edf4);
 }
 
@@ -636,12 +671,11 @@
   margin-top: 22px;
   padding: 16px 18px;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0,1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
-  border: 1px solid rgba(13,45,80,.10);
+  border: 1px solid rgba(13, 45, 80, 0.1);
   border-radius: 18px;
-  background:
-    linear-gradient(115deg, #e1e7ed, #fff 42%, #b7c2cd 72%, #edf2f6);
+  background: linear-gradient(115deg, #e1e7ed, #fff 42%, #b7c2cd 72%, #edf2f6);
   box-shadow: inset 0 1px 0 #fff;
 }
 
@@ -654,7 +688,7 @@
 
 .totalBar div + div {
   padding-left: 16px;
-  border-left: 1px solid rgba(13,45,80,.12);
+  border-left: 1px solid rgba(13, 45, 80, 0.12);
 }
 
 .totalBar small {
@@ -662,7 +696,7 @@
   font-family: var(--font-zenit-body), Arial, sans-serif;
   font-size: 8px;
   font-weight: 800;
-  letter-spacing: .08em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
@@ -686,32 +720,37 @@
   font-family: var(--font-zenit-body), Arial, sans-serif;
   font-size: 8px;
   font-weight: 800;
-  letter-spacing: .10em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 .form input,
 .form textarea {
   width: 100%;
-  border: 1px solid rgba(13,45,80,.13);
+  border: 1px solid rgba(13, 45, 80, 0.13);
   border-radius: 13px;
   outline: none;
   color: #0b2037;
-  background: rgba(255,255,255,.78);
+  background: rgba(255, 255, 255, 0.78);
   padding: 13px 14px;
   font-family: var(--font-zenit-body), Arial, sans-serif;
   font-size: 12px;
   text-transform: none;
   letter-spacing: 0;
   box-shadow: inset 0 1px 0 #fff;
-  transition: border-color .25s ease, box-shadow .25s ease, background .25s ease;
+  transition:
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    background 0.25s ease;
 }
 
 .form input:focus,
 .form textarea:focus {
-  border-color: rgba(42,90,134,.48);
+  border-color: rgba(42, 90, 134, 0.48);
   background: #fff;
-  box-shadow: 0 0 0 3px rgba(81,133,180,.08), inset 0 1px 0 #fff;
+  box-shadow:
+    0 0 0 3px rgba(81, 133, 180, 0.08),
+    inset 0 1px 0 #fff;
 }
 
 .form textarea {
@@ -721,15 +760,15 @@
 
 .formRow {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0,1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 
 .summary {
   padding: 16px;
-  border: 1px solid rgba(13,45,80,.10);
+  border: 1px solid rgba(13, 45, 80, 0.1);
   border-radius: 17px;
-  background: rgba(255,255,255,.56);
+  background: rgba(255, 255, 255, 0.56);
 }
 
 .summary > small {
@@ -739,7 +778,7 @@
   font-family: var(--font-zenit-body), Arial, sans-serif;
   font-size: 8px;
   font-weight: 800;
-  letter-spacing: .14em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
@@ -750,11 +789,10 @@
   font-size: 10px;
 }
 
-
 .summarySection + .summarySection {
   margin-top: 14px;
   padding-top: 12px;
-  border-top: 1px solid rgba(13,45,80,.08);
+  border-top: 1px solid rgba(13, 45, 80, 0.08);
 }
 
 .summarySection > strong {
@@ -764,7 +802,7 @@
   font-family: var(--font-zenit-body), Arial, sans-serif;
   font-size: 8px;
   font-weight: 800;
-  letter-spacing: .08em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
@@ -794,7 +832,7 @@
   justify-content: space-between;
   align-items: center;
   gap: 14px;
-  border-top: 1px solid rgba(13,45,80,.10);
+  border-top: 1px solid rgba(13, 45, 80, 0.1);
 }
 
 .summaryTotal span {
@@ -803,7 +841,7 @@
   font-size: 9px;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: .06em;
+  letter-spacing: 0.06em;
 }
 
 .summaryTotal strong {
@@ -823,26 +861,33 @@
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  border: 1px solid rgba(13,45,80,.22);
+  border: 1px solid rgba(13, 45, 80, 0.22);
   border-radius: 999px;
   color: #071426;
-  background:
-    linear-gradient(115deg, #c8d0d8 0%, #fff 18%, #9faab5 38%, #f8fafc 54%, #a8b4bf 72%, #eef2f5 100%);
+  background: linear-gradient(
+    115deg,
+    #c8d0d8 0%,
+    #fff 18%,
+    #9faab5 38%,
+    #f8fafc 54%,
+    #a8b4bf 72%,
+    #eef2f5 100%
+  );
   background-size: 190% 100%;
   box-shadow:
     inset 0 1px 0 #fff,
-    inset 0 -1px 0 rgba(37,57,76,.24),
-    0 12px 28px rgba(21,47,73,.12);
+    inset 0 -1px 0 rgba(37, 57, 76, 0.24),
+    0 12px 28px rgba(21, 47, 73, 0.12);
   font-family: var(--font-zenit-body), Arial, sans-serif;
   font-size: 9px;
   font-weight: 900;
-  letter-spacing: .07em;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
   transition:
-    transform .28s ease,
-    background-position .8s ease,
-    box-shadow .28s ease,
-    opacity .28s ease;
+    transform 0.28s ease,
+    background-position 0.8s ease,
+    box-shadow 0.28s ease,
+    opacity 0.28s ease;
 }
 
 .submitButton:not(:disabled):hover {
@@ -850,11 +895,11 @@
   background-position: 100% 0;
   box-shadow:
     inset 0 1px 0 #fff,
-    0 16px 34px rgba(21,47,73,.18);
+    0 16px 34px rgba(21, 47, 73, 0.18);
 }
 
 .submitButton:disabled {
-  opacity: .42;
+  opacity: 0.42;
   cursor: not-allowed;
 }
 
@@ -874,10 +919,10 @@
 .successMessage {
   margin: 0;
   padding: 11px 13px;
-  border: 1px solid rgba(35,110,79,.18);
+  border: 1px solid rgba(35, 110, 79, 0.18);
   border-radius: 12px;
   color: #315d4a;
-  background: rgba(221,242,231,.66);
+  background: rgba(221, 242, 231, 0.66);
   font-family: var(--font-zenit-body), Arial, sans-serif;
   font-size: 9px;
   line-height: 1.5;
@@ -890,10 +935,10 @@
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 17px;
-  border: 1px solid rgba(13,45,80,.10);
+  border: 1px solid rgba(13, 45, 80, 0.1);
   border-radius: 20px;
-  background: rgba(255,255,255,.67);
-  box-shadow: 0 13px 32px rgba(20,36,55,.05);
+  background: rgba(255, 255, 255, 0.67);
+  box-shadow: 0 13px 32px rgba(20, 36, 55, 0.05);
 }
 
 .bookingNote > span {
@@ -901,7 +946,7 @@
   height: 42px;
   display: grid;
   place-items: center;
-  border: 1px solid rgba(13,45,80,.13);
+  border: 1px solid rgba(13, 45, 80, 0.13);
   border-radius: 50%;
   color: #173557;
   background: #fff;
@@ -914,7 +959,7 @@
   font-family: var(--font-zenit-body), Arial, sans-serif;
   font-size: 8px;
   font-weight: 800;
-  letter-spacing: .14em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
@@ -1004,7 +1049,7 @@
   .heroCard {
     padding: 19px 0 0;
     border-left: 0;
-    border-top: 1px solid rgba(255,255,255,.22);
+    border-top: 1px solid rgba(255, 255, 255, 0.22);
   }
 
   .bookingSection {
@@ -1020,7 +1065,7 @@
   }
 
   .serviceRow {
-    grid-template-columns: 28px minmax(0,1fr);
+    grid-template-columns: 28px minmax(0, 1fr);
   }
 
   .serviceRow > b {
@@ -1036,7 +1081,7 @@
     padding-left: 0;
     padding-top: 10px;
     border-left: 0;
-    border-top: 1px solid rgba(13,45,80,.12);
+    border-top: 1px solid rgba(13, 45, 80, 0.12);
   }
 
   .bookingNote {
@@ -1059,4 +1104,29 @@
   .serviceRow:hover::after {
     opacity: 0;
   }
+}
+.bookingFeedback {
+  scroll-margin-top: 100px;
+}
+.bookingError {
+  padding: 18px;
+  border: 1px solid #c98b93;
+  border-radius: 16px;
+  background: #fff2f3;
+  color: #7b2532;
+  font-size: 15px;
+  line-height: 1.6;
+}
+.bookingFeedback .successMessage {
+  padding: 22px;
+  border: 1px solid #9cb9c9;
+  border-radius: 20px;
+  background: linear-gradient(125deg, #fff, #e4eef5);
+  color: #143957;
+  font-size: 16px;
+  line-height: 1.7;
+  box-shadow: 0 10px 25px #12355310;
+}
+.bookingFeedback .successMessage strong {
+  font-size: 21px;
 }

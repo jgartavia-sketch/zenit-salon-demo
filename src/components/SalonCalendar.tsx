@@ -19,6 +19,7 @@ type Snapshot = {
   month: string;
   days: CalendarDay[];
   appointments?: CalendarAppointment[];
+  bookingUnavailableReason?: string;
 };
 const labels: Record<CalendarDay["state"], string> = {
   available: "Disponible",
@@ -83,7 +84,10 @@ export default function SalonCalendar({
         });
         const d = await r.json();
         if (!r.ok) throw Error(d.error || "No se pudo cargar la agenda.");
-        if (live) setSnapshot(d);
+        if (live) {
+          setSnapshot(d);
+          if (d.bookingUnavailableReason) setError(d.bookingUnavailableReason);
+        }
       } catch (e) {
         if (live && !controller.signal.aborted)
           setError(
