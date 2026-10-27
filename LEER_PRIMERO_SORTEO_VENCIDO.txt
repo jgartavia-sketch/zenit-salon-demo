@@ -1,0 +1,20 @@
+ZÉNIT · QUITAR SORTEO VENCIDO DE MI CUENTA
+
+Solo frontend. Base main: c1004b0bc9818fcba0753e6d927e15829b57013c.
+Se elimina el bloque del sorteo del 18 de septiembre de 2026, el 50% de descuento,
+el mensaje ¡ES HOY! y la lógica del contador que ya no se utiliza.
+Se conserva el resto del archivo, incluida la actualización reciente de reservas,
+correo, ingreso, puntos, referidos, historial y Mis citas y pedidos.
+
+1. Extraer el contenido en la raíz de Zenit/zenit-salon-demo conservando app/.
+2. Reemplazar app/page.tsx. No borrar los demás archivos.
+3. Desde la terminal del frontend:
+   git add app/page.tsx LEER_PRIMERO_SORTEO_VENCIDO.txt
+   git commit -m "Retira sorteo vencido de Mi cuenta"
+   git push origin main
+4. Esperar Ready en Vercel y recargar /mi-cuenta con Ctrl+F5.
+
+Validación: diff contra GitHub limitado a eliminar ese bloque y su contador.
+Compilación de producción y TypeScript correctos. ESLint del archivo: 0 errores,
+5 advertencias preexistentes de img/next/image. No hay cambios de estilos ni
+backend, migraciones, variables de Render o configuración de Resend.

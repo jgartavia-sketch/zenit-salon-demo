@@ -39,28 +39,6 @@ type PointMovement = {
   created_at: string;
 };
 
-type ContestCountdown = {
-  days: number;
-  hours: number;
-  minutes: number;
-  seconds: number;
-  finished: boolean;
-};
-
-function getContestCountdown(): ContestCountdown {
-  // Costa Rica is UTC-6 year-round. 18 Sep 2026, 1:00 p.m. CR = 19:00 UTC.
-  const target = new Date("2026-09-18T19:00:00.000Z").getTime();
-  const distance = Math.max(0, target - Date.now());
-
-  return {
-    days: Math.floor(distance / (1000 * 60 * 60 * 24)),
-    hours: Math.floor((distance / (1000 * 60 * 60)) % 24),
-    minutes: Math.floor((distance / (1000 * 60)) % 60),
-    seconds: Math.floor((distance / 1000) % 60),
-    finished: distance <= 0,
-  };
-}
-
 export default function Home() {
   const pathname = usePathname();
   const router = useRouter();
@@ -88,15 +66,6 @@ export default function Home() {
   const [selectedService, setSelectedService] = useState("Corte y estilismo");
   const [serviceRequestLoading, setServiceRequestLoading] = useState(false);
   const [serviceRequestError, setServiceRequestError] = useState("");
-  const [contestCountdown, setContestCountdown] = useState<ContestCountdown>(() => getContestCountdown());
-
-  useEffect(() => {
-    const updateCountdown = () => setContestCountdown(getContestCountdown());
-    updateCountdown();
-    const timer = window.setInterval(updateCountdown, 1000);
-    return () => window.clearInterval(timer);
-  }, []);
-
   useEffect(() => {
     const loadSession = async () => {
       try {
@@ -495,48 +464,6 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="account-section contest-section">
-              <div className="subheading">
-                <div>
-                  <p className="eyebrow"><span /> Concurso activo · Club Zénit</p>
-                  <h3>Tu registro puede llevarte a ganar.</h3>
-                </div>
-                <p>La rifa se realizará el viernes 18 de septiembre de 2026 a la 1:00 p. m. entre las personas registradas en el Club Zénit.</p>
-              </div>
-
-              <div className="contest-panel">
-                <div className="contest-copy">
-                  <small>PREMIO ESPECIAL</small>
-                  <strong>50% DE DESCUENTO</strong>
-                  <p>La persona ganadora podrá elegir uno de los siguientes servicios:</p>
-                  <ul>
-                    <li>Tratamiento de aminoácidos + corte</li>
-                    <li>Velo de brillo + corte</li>
-                    <li>Botox capilar + corte</li>
-                  </ul>
-                  <p className="contest-live">El sorteo se transmitirá en vivo por el Facebook oficial de Zénit Salón.</p>
-                </div>
-
-                <div className="contest-countdown" aria-live="polite">
-                  <small>{contestCountdown.finished ? "SORTEO" : "CUENTA REGRESIVA"}</small>
-                  {contestCountdown.finished ? (
-                    <div className="contest-today">
-                      <strong>¡ES HOY!</strong>
-                      <span>Seguí la transmisión oficial en Facebook Live.</span>
-                    </div>
-                  ) : (
-                    <div className="countdown-grid">
-                      <div><strong>{String(contestCountdown.days).padStart(2, "0")}</strong><span>DÍAS</span></div>
-                      <div><strong>{String(contestCountdown.hours).padStart(2, "0")}</strong><span>HORAS</span></div>
-                      <div><strong>{String(contestCountdown.minutes).padStart(2, "0")}</strong><span>MIN</span></div>
-                      <div><strong>{String(contestCountdown.seconds).padStart(2, "0")}</strong><span>SEG</span></div>
-                    </div>
-                  )}
-                  <p>Viernes 18 de septiembre · 1:00 p. m. · Costa Rica</p>
-                </div>
-              </div>
-            </div>
-
             <div className="account-columns">
               <div className="account-section referral-center">
                 <p className="eyebrow"><span /> Crecé tu red</p><h3>Invitar a alguien</h3><p>El código vence en tres días y solo puede utilizarse una vez. Podés generar otro cuando el anterior expire o sea utilizado.</p>
@@ -663,3 +590,4 @@ export default function Home() {
     </main>
   );
 }
+
