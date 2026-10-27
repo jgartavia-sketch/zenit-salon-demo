@@ -75,6 +75,7 @@ export default function OwnerOperations() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [posConnected,setPosConnected]=useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -94,6 +95,7 @@ export default function OwnerOperations() {
     setServices(v.services);
     setOrders(o.orders);
     setMailQueue(m);
+    setPosConnected(o.posConnected===true);
   }, [date]);
   useEffect(() => {
     const timer = setTimeout(
@@ -859,6 +861,7 @@ export default function OwnerOperations() {
               {o.customer?.phone && <p>WhatsApp: {o.customer.phone}</p>}
               {o.status === "PENDING" && (
                 <div className={styles.row}>
+                  {posConnected ? <a href="https://systemlabcr.com/pos/salon" target="_blank" rel="noopener noreferrer">Cobrar en POS ↗</a> : <>
                   <button
                     disabled={busy}
                     onClick={() => {
@@ -876,6 +879,7 @@ export default function OwnerOperations() {
                   >
                     Pagado y entregado
                   </button>
+                  </>}
                   <button
                     disabled={busy}
                     onClick={() => {

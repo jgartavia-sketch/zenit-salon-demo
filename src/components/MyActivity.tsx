@@ -23,6 +23,7 @@ export const statusLabel: Record<string, string> = {
   CONFIRMED: "Confirmada",
   COMPLETED: "Completada",
   CANCELLED: "Cancelada",
+  REFUNDED: "Devuelto",
   EXPIRED: "Vencida",
   BLOCKED: "Bloqueado",
 };
