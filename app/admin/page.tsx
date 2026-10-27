@@ -3,10 +3,11 @@
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import Link from "next/link";
+import OwnerOperations from "../../src/components/OwnerOperations";
 import responsive from "./admin.module.css";
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/$/, "");
-const ADMIN_SESSION_KEY = "zenit_admin_key";
+const API_URL = "/api/backend";
+
 
 type Category = {
   id: string;
@@ -110,7 +111,8 @@ function formatColones(value: number) {
 
 export default function AdminPage() {
   const [activeSection, setActiveSection] = useState<"catalog" | "customers" | "points">("catalog");
-  const [adminKey, setAdminKey] = useState("");
+  const [ownerPassword, setOwnerPassword] = useState("");
+  const [ownerEmail, setOwnerEmail] = useState("");
   const [authenticated, setAuthenticated] = useState(false);
   const [checking, setChecking] = useState(true);
   const [loginError, setLoginError] = useState("");
@@ -135,6 +137,7 @@ export default function AdminPage() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [customerLoading, setCustomerLoading] = useState(false);
   const [amountColones, setAmountColones] = useState("");
+  const [invoiceReference, setInvoiceReference] = useState("");
   const [pointDescription, setPointDescription] = useState("Compra o servicio confirmado");
   const [customerPage, setCustomerPage] = useState(1);
   const [customerTotal, setCustomerTotal] = useState(0);
@@ -142,12 +145,12 @@ export default function AdminPage() {
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [customerForm, setCustomerForm] = useState<CustomerForm | null>(null);
 
-  const headers = (key = adminKey) => ({
+  const headers = () => ({
     "Content-Type": "application/json",
-    "x-admin-key": key,
+
   });
 
-  const loadAdminData = async (key = adminKey) => {
+  const loadAdminData = async () => {
     setLoading(true);
     setActionError("");
 
@@ -155,16 +158,16 @@ export default function AdminPage() {
       const [productsResponse, categoriesResponse] = await Promise.all([
         fetch(`${API_URL}/api/admin/products`, {
           cache: "no-store",
-          headers: { "x-admin-key": key },
+          headers: {},
         }),
         fetch(`${API_URL}/api/admin/product-categories`, {
           cache: "no-store",
-          headers: { "x-admin-key": key },
+          headers: {},
         }),
       ]);
 
       if (productsResponse.status === 401 || categoriesResponse.status === 401) {
-        throw new Error("Clave administrativa incorrecta.");
+        throw new Error("Iniciá sesión con tu cuenta de propietaria.");
       }
 
       const productsData = await productsResponse.json();
@@ -192,26 +195,10 @@ export default function AdminPage() {
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      const savedKey = sessionStorage.getItem(ADMIN_SESSION_KEY);
-
-      if (!savedKey) {
-        setChecking(false);
-        return;
-      }
-
-      setAdminKey(savedKey);
-
-      loadAdminData(savedKey).then((ok) => {
-        if (ok) {
-          setAuthenticated(true);
-        } else {
-          sessionStorage.removeItem(ADMIN_SESSION_KEY);
-        }
-      });
+      loadAdminData().then((ok) => { if(ok) setAuthenticated(true); });
     }, 0);
 
     return () => window.clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const login = async (event: FormEvent<HTMLFormElement>) => {
@@ -219,27 +206,25 @@ export default function AdminPage() {
     setLoginError("");
     setActionError("");
 
-    const key = adminKey.trim();
+    const key = ownerPassword;
 
     if (!key) {
-      setLoginError("Ingresá la clave administrativa.");
+      setLoginError("Ingresá tu contraseña.");
       return;
     }
 
-    const ok = await loadAdminData(key);
-
-    if (!ok) {
-      setLoginError("No se pudo validar la clave administrativa.");
-      return;
-    }
-
-    sessionStorage.setItem(ADMIN_SESSION_KEY, key);
+    const response = await fetch(`${API_URL}/api/auth/login?owner=1`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:ownerEmail,password:key})});
+    const result = await response.json();
+    if(!response.ok){ setLoginError(result.error || "No se pudo iniciar sesión."); return; }
+    setOwnerPassword("");
+    const ok = await loadAdminData();
+    if(!ok) return;
     setAuthenticated(true);
   };
 
-  const logout = () => {
-    sessionStorage.removeItem(ADMIN_SESSION_KEY);
-    setAdminKey("");
+  const logout = async () => {
+    await fetch(`${API_URL}/api/auth/logout?owner=1`,{method:"POST"});
+    setOwnerPassword("");
     setAuthenticated(false);
     setProducts([]);
     setCategories([]);
@@ -277,7 +262,7 @@ export default function AdminPage() {
     try {
       const response = await fetch(
         `${API_URL}/api/admin/customers?q=${encodeURIComponent(query)}&page=${page}&pageSize=50`,
-        { cache: "no-store", headers: { "x-admin-key": adminKey } },
+        { cache: "no-store", headers: { "X-Zenit-Panel": ownerPassword } },
       );
       const result = await response.json();
 
@@ -355,7 +340,7 @@ export default function AdminPage() {
 
   const deleteCustomer = async (customer: Customer) => {
     const confirmed = window.confirm(
-      `¿Eliminar definitivamente a ${customer.name}? Esta acción también borrará su historial de puntos y no se puede deshacer.`,
+      `¿Desactivar el acceso de ${customer.name}? Su historial y sus pedidos se conservarán.`,
     );
     if (!confirmed) return;
 
@@ -366,7 +351,7 @@ export default function AdminPage() {
     try {
       const response = await fetch(`${API_URL}/api/admin/customers/${customer.id}`, {
         method: "DELETE",
-        headers: { "x-admin-key": adminKey },
+        headers: {},
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "No se pudo eliminar el cliente.");
@@ -377,7 +362,7 @@ export default function AdminPage() {
         setCustomerForm(null);
       }
       await loadCustomers(customerPage);
-      setMessage(`Cliente ${customer.name} eliminado.`);
+      setMessage(`Acceso de ${customer.name} desactivado. Su historial se conserva.`);
     } catch (error) {
       setActionError(error instanceof Error ? error.message : "No se pudo eliminar el cliente.");
     } finally {
@@ -401,6 +386,7 @@ export default function AdminPage() {
           email: selectedCustomer.email,
           amountColones: Number(amountColones),
           description: pointDescription.trim(),
+          referenceId: invoiceReference.trim(),
         }),
       });
       const result = await response.json();
@@ -479,7 +465,7 @@ export default function AdminPage() {
       const response = await fetch(`${API_URL}/api/uploads/product-image`, {
         method: "POST",
         headers: {
-          "x-admin-key": adminKey,
+
         },
         body: formData,
       });
@@ -753,19 +739,20 @@ export default function AdminPage() {
         <section style={styles.loginCard}>
           <img src="/logo-zenit.png" alt="Zénit Salón" style={styles.loginLogo} />
           <p style={styles.eyebrow}>Administración privada</p>
-          <h1 style={styles.loginTitle}>Control de catálogo</h1>
+          <h1 style={styles.loginTitle}>Tu salón, en tus manos</h1>
           <p style={styles.loginText}>
-            Ingresá la clave administrativa para gestionar productos y categorías.
+            Ingresá con tu correo y contraseña para administrar Zénit.
           </p>
 
-          <form onSubmit={login} style={styles.loginForm}>
+          <form onSubmit={(event) => { void login(event).catch(() => setLoginError("No se pudo conectar con el salón.")); }} style={styles.loginForm}>
+            <label style={styles.label}>Correo<input type="email" value={ownerEmail} onChange={e=>setOwnerEmail(e.target.value)} autoComplete="username" required style={styles.input}/></label>
             <label style={styles.label}>
-              Clave administrativa
+              Contraseña
               <input
-                value={adminKey}
-                onChange={(event) => setAdminKey(event.target.value)}
+                value={ownerPassword}
+                onChange={(event) => setOwnerPassword(event.target.value)}
                 type="password"
-                autoComplete="off"
+                autoComplete="current-password"
                 placeholder="••••••••••••••"
                 style={styles.input}
               />
@@ -807,6 +794,7 @@ export default function AdminPage() {
         </div>
       </header>
 
+      <OwnerOperations />
       <section style={styles.shell}>
         <div style={styles.headingRow}>
           <div>
@@ -1025,6 +1013,7 @@ export default function AdminPage() {
                     />
                   </label>
 
+                  <label style={styles.label}>Referencia de factura<input value={invoiceReference} onChange={e=>setInvoiceReference(e.target.value)} required minLength={3} style={styles.input}/></label>
                   <label style={styles.label}>
                     Descripción
                     <input

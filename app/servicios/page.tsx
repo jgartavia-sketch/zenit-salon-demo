@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import styles from "./servicios.module.css";
 
 type ServiceMode = "quote" | "reserve";
@@ -24,80 +25,11 @@ type ServiceCategory = {
   services: Service[];
 };
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/$/, "");
+const API_URL = "/api/backend";
 const WHATSAPP_NUMBER = "50671246337";
 
 const sharedIncluded =
   "Incluye lavado, secado y planchado al finalizar el servicio.";
-
-const fallbackServiceCategories: ServiceCategory[] = [
-  {
-    id: "cortes",
-    name: "Cortes",
-    eyebrow: "Precio fijo",
-    description:
-      "Todos los cortes tienen un precio fijo de ₡5.000 e incluyen lavado, secado y planchado.",
-    services: [
-      { id: "corte-recto", name: "Corte recto", category: "Cortes", mode: "reserve", price: 5000 },
-      { id: "corte-v", name: "Corte en V", category: "Cortes", mode: "reserve", price: 5000 },
-      { id: "corte-mariposa", name: "Corte mariposa", category: "Cortes", mode: "reserve", price: 5000 },
-      { id: "corte-capas", name: "Corte en capas", category: "Cortes", mode: "reserve", price: 5000 },
-      { id: "corte-pixie", name: "Corte pixie", category: "Cortes", mode: "reserve", price: 5000 },
-      { id: "corte-bob-chanel", name: "Corte bob o chanel", category: "Cortes", mode: "reserve", price: 5000 },
-      { id: "corte-clasico-hombre", name: "Corte clásico de hombre", category: "Cortes", mode: "reserve", price: 5000 },
-    ],
-  },
-  {
-    id: "tratamientos-capilares",
-    name: "Tratamientos capilares",
-    eyebrow: "Cotización personalizada",
-    description:
-      "Seleccioná uno o varios tratamientos y Zénit te cotizará según largo, cantidad de cabello y valoración.",
-    services: [
-      { id: "velo-brillo", name: "Velo de brillo", category: "Tratamientos capilares", mode: "quote" },
-      { id: "aminoacidos", name: "Aminoácidos", category: "Tratamientos capilares", mode: "quote" },
-      { id: "tratamiento-danos", name: "Tratamiento de daños", category: "Tratamientos capilares", mode: "quote" },
-      { id: "botox-alisante", name: "Botox alisante", category: "Tratamientos capilares", mode: "quote" },
-      { id: "botox-humectante", name: "Botox humectante", category: "Tratamientos capilares", mode: "quote" },
-      { id: "celulas-madres", name: "Células madres", category: "Tratamientos capilares", mode: "quote" },
-      { id: "keratina", name: "Keratina", category: "Tratamientos capilares", mode: "quote" },
-      { id: "nanoplastia", name: "Nanoplastia", category: "Tratamientos capilares", mode: "quote" },
-      { id: "liso-extremo", name: "Liso extremo", category: "Tratamientos capilares", mode: "quote" },
-    ],
-  },
-  {
-    id: "tintes",
-    name: "Tintes",
-    eyebrow: "Cotización personalizada",
-    description:
-      "Elegí una o varias técnicas de color para solicitar una cotización directamente por WhatsApp.",
-    services: [
-      { id: "tinte-fantasia", name: "Tinte fantasía", category: "Tintes", mode: "quote" },
-      { id: "tinte-global", name: "Tinte global", category: "Tintes", mode: "quote" },
-      { id: "cubrimiento-canas", name: "Cubrimiento de canas", category: "Tintes", mode: "quote" },
-      { id: "mechas-rayitos", name: "Diseño de mechas y rayitos", category: "Tintes", mode: "quote" },
-      { id: "balayage", name: "Balayage", category: "Tintes", mode: "quote" },
-      { id: "morena-iluminada", name: "Morena iluminada", category: "Tintes", mode: "quote" },
-    ],
-  },
-  {
-    id: "lavado-secado-planchado",
-    name: "Lavado, secado y planchado",
-    eyebrow: "Servicio completo",
-    description:
-      "También podés reservar lavado, secado y planchado como servicio independiente con tratamiento básico incluido.",
-    services: [
-      {
-        id: "lavado-secado-planchado-tratamiento",
-        name: "Lavado + secado + planchado + tratamiento básico",
-        category: "Lavado, secado y planchado",
-        mode: "reserve",
-        price: 10000,
-        note: "Tratamiento básico incluido.",
-      },
-    ],
-  },
-];
 
 function formatPrice(value: number) {
   return `₡${value.toLocaleString("es-CR")}`;
@@ -119,12 +51,12 @@ function buildWhatsAppMessage(services: Service[]) {
 }
 
 export default function ServiciosPage() {
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [serviceCategories, setServiceCategories] = useState<ServiceCategory[]>(
-    fallbackServiceCategories,
-  );
+  const [serviceCategories, setServiceCategories] = useState<ServiceCategory[]>([]);
+  const [catalogError,setCatalogError]=useState("");
 
   useEffect(() => {
     const loadServices = async () => {
@@ -133,15 +65,14 @@ export default function ServiciosPage() {
           cache: "no-store",
         });
 
-        if (!response.ok) return;
+        if (!response.ok) throw Error();
 
         const data = await response.json();
-        if (Array.isArray(data.categories) && data.categories.length > 0) {
+        if (Array.isArray(data.categories)) {
           setServiceCategories(data.categories);
         }
       } catch {
-        // El catálogo local de respaldo mantiene la página operativa
-        // mientras el backend no esté disponible.
+        setCatalogError("No se pudieron cargar los servicios vigentes. Actualizá la página o contactá al salón.");
       }
     };
 
@@ -217,7 +148,7 @@ export default function ServiciosPage() {
       reserveServices.map((service) => service.id).join(","),
     );
 
-    window.location.href = `/reservar?${params.toString()}`;
+    router.push(`/reservar?${params.toString()}`);
   };
 
   return (
@@ -265,6 +196,7 @@ export default function ServiciosPage() {
           <Link className="account-link" href="/login">Ingresar</Link>
         </div>
       </header>
+      {catalogError&&<p role="alert" style={{padding:"110px 24px 24px",color:"#173557",background:"#edf2f6"}}>{catalogError}</p>}
 
       <section className={styles.hero}>
         <div className={styles.heroGlow} aria-hidden="true" />

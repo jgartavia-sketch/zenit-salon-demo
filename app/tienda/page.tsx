@@ -27,123 +27,8 @@ type CartItem = Product & {
   quantity: number;
 };
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/$/, "");
+const API_URL = "/api/backend";
 const WHATSAPP_NUMBER = "50671246337";
-
-const fallbackCategories: ProductCategory[] = [
-  {
-    id: "shampoo",
-    name: "Shampoo",
-    products: [
-      {
-        id: "yoorganic-moisturizing-shampoo",
-        name: "Moisturizing Shampoo",
-        brand: "YOORGANIC",
-        category: "Shampoo",
-        price: 1000,
-        description:
-          "Shampoo profesional de enfoque hidratante para cabello seco o sensibilizado. Ayuda a mantener una apariencia suave, manejable y con brillo dentro de la rutina capilar.",
-        image: "/images/productos/yoorganic-moisturizing-shampoo.png",
-        available: true,
-      },
-      {
-        id: "yoorganic-nourishing-shampoo",
-        name: "Nourishing Shampoo",
-        brand: "YOORGANIC",
-        category: "Shampoo",
-        price: 1000,
-        description:
-          "Shampoo nutritivo para complementar rutinas de cuidado profesional, especialmente en cabellos que necesitan suavidad, manejabilidad y una apariencia saludable.",
-        image: "/images/productos/yoorganic-nourishing-shampoo.png",
-        available: true,
-      },
-      {
-        id: "nevada-silver-shampoo",
-        name: "Silver Shampoo",
-        brand: "Nevada Professional",
-        category: "Shampoo",
-        price: 1000,
-        description:
-          "Shampoo tipo silver pensado para el mantenimiento cosmético de cabellos claros, grises o decolorados. Ideal para una rutina de cuidado orientada a mantener una apariencia fría y uniforme.",
-        image: "/images/productos/nevada-silver-shampoo.png",
-        available: true,
-      },
-    ],
-  },
-  {
-    id: "aceites-serums",
-    name: "Aceites y sérums",
-    products: [
-      {
-        id: "yoorganic-nourishing-oil",
-        name: "Nourishing Oil",
-        brand: "YOORGANIC",
-        category: "Aceites y sérums",
-        price: 1000,
-        description:
-          "Aceite capilar de acabado para medios y puntas. Ayuda a aportar brillo, suavidad y una apariencia más pulida dentro de la rutina diaria o profesional.",
-        image: "/images/productos/yoorganic-nourishing-oil.png",
-        available: true,
-      },
-      {
-        id: "karseell-maca-essence-oil",
-        name: "Maca Essence Oil",
-        brand: "Karseell",
-        category: "Aceites y sérums",
-        price: 1000,
-        description:
-          "Aceite capilar pensado para aportar nutrición, brillo, hidratación y control del frizz. Puede aplicarse principalmente en medios y puntas para complementar el acabado del cabello.",
-        image: "/images/productos/karseell-maca-essence-oil.png",
-        available: true,
-      },
-    ],
-  },
-  {
-    id: "tratamientos-productos",
-    name: "Tratamientos",
-    products: [
-      {
-        id: "yoorganic-protein-hair-repairing-liquid",
-        name: "Protein Hair Repairing Liquid",
-        brand: "YOORGANIC",
-        category: "Tratamientos",
-        price: 1000,
-        description:
-          "Tratamiento capilar líquido orientado al cuidado del cabello sensibilizado. Puede integrarse a una rutina profesional enfocada en mejorar suavidad, apariencia y manejabilidad.",
-        image: "/images/productos/yoorganic-protein-hair-repairing-liquid.png",
-        available: true,
-      },
-      {
-        id: "nevada-leave-in-thermoactive",
-        name: "Leave-in Thermoactive",
-        brand: "Nevada Professional",
-        category: "Tratamientos",
-        price: 1000,
-        description:
-          "Tratamiento sin enjuague pensado para acompañar el peinado y la preparación del cabello antes del secado o del uso de herramientas térmicas.",
-        image: "/images/productos/nevada-leave-in-thermoactive.png",
-        available: true,
-      },
-    ],
-  },
-  {
-    id: "proteccion-termica",
-    name: "Protección térmica",
-    products: [
-      {
-        id: "wella-eimi-thermal-image",
-        name: "EIMI Thermal Image",
-        brand: "Wella Professionals",
-        category: "Protección térmica",
-        price: 1000,
-        description:
-          "Spray de protección térmica diseñado para utilizarse antes del estilizado con herramientas de calor. Complementa el peinado profesional y ayuda a mantener un acabado pulido.",
-        image: "/images/productos/wella-eimi-thermal-image.png",
-        available: true,
-      },
-    ],
-  },
-];
 
 function formatPrice(value: number) {
   return `₡${value.toLocaleString("es-CR")}`;
@@ -155,15 +40,13 @@ export default function TiendaPage() {
   const [cartOpen, setCartOpen] = useState(false);
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({});
   const [catalogCategories, setCatalogCategories] =
-    useState<ProductCategory[]>(fallbackCategories);
-  const [selectedQuantities, setSelectedQuantities] = useState<Record<string, number>>(
-    () =>
-      Object.fromEntries(
-        fallbackCategories.flatMap((category) =>
-          category.products.map((product) => [product.id, 1]),
-        ),
-      ),
-  );
+    useState<ProductCategory[]>([]);
+  const [selectedQuantities, setSelectedQuantities] = useState<Record<string, number>>({});
+  const [catalogError, setCatalogError] = useState("");
+  const [ordering, setOrdering] = useState(false);
+  const [orderMessage, setOrderMessage] = useState("");
+  const [orderKey, setOrderKey] = useState("");
+  const [cartReady, setCartReady] = useState(false);
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -172,11 +55,21 @@ export default function TiendaPage() {
           cache: "no-store",
         });
 
-        if (!response.ok) return;
+        if (!response.ok) throw Error();
 
         const data = await response.json();
-        if (Array.isArray(data.categories) && data.categories.length > 0) {
+        if (Array.isArray(data.categories)) {
           setCatalogCategories(data.categories);
+          try {
+            const saved = JSON.parse(localStorage.getItem("zenit_cart") || "[]");
+            const live: Product[] = data.categories.flatMap((c:ProductCategory)=>c.products);
+            if(Array.isArray(saved))setCart(saved.slice(0,50).flatMap((item:{id?:string;quantity?:number})=>{
+              const product=live.find(p=>p.id===item.id);
+              if(!product || !product.available || !Number.isInteger(item.quantity) || !item.quantity || item.quantity<1)return [];
+              const quantity=Math.min(99,item.quantity,product.stock ?? 99);return quantity>0?[{...product,quantity}]:[];
+            }));
+          }catch{localStorage.removeItem("zenit_cart");}
+          setCartReady(true);
           setSelectedQuantities((current) => {
             const next = { ...current };
             for (const category of data.categories as ProductCategory[]) {
@@ -188,19 +81,14 @@ export default function TiendaPage() {
           });
         }
       } catch {
-        // El catálogo embebido conserva la tienda operativa
-        // si el backend no está disponible temporalmente.
+        setCatalogError("No se pudo cargar el catálogo vigente. Actualizá la página o contactá al salón.");
       }
     };
 
     void loadProducts();
   }, []);
 
-  const products = useMemo(
-    () => catalogCategories.flatMap((category) => category.products),
-    [catalogCategories],
-  );
-
+  useEffect(()=>{if(cartReady)localStorage.setItem("zenit_cart",JSON.stringify(cart.map(i=>({id:i.id,quantity:i.quantity}))));},[cart,cartReady]);
   const totalItems = useMemo(
     () => cart.reduce((total, item) => total + item.quantity, 0),
     [cart],
@@ -230,7 +118,7 @@ export default function TiendaPage() {
   };
 
   const addToCart = (product: Product) => {
-    if (!product.available) return;
+    if (ordering || !product.available) return;
 
     const max = maxQuantityFor(product);
     if (max <= 0) return;
@@ -262,6 +150,7 @@ export default function TiendaPage() {
   };
 
   const changeQuantity = (productId: string, amount: number) => {
+    if(ordering)return;
     setCart((current) =>
       current
         .map((item) => {
@@ -277,34 +166,25 @@ export default function TiendaPage() {
   };
 
   const removeFromCart = (productId: string) => {
+    if(ordering)return;
     setCart((current) => current.filter((item) => item.id !== productId));
   };
 
-  const sendOrderToWhatsApp = () => {
+  const sendOrderToWhatsApp = async () => {
     if (!cart.length) return;
 
-    const productLines = cart.map(
-      (item) =>
-        `• ${item.quantity} x ${item.brand} ${item.name} — ${formatPrice(
-          item.price * item.quantity,
-        )}`,
-    );
+    setOrdering(true);setOrderMessage("");
+    const key=orderKey || crypto.randomUUID();setOrderKey(key);
+    try {
+      const response=await fetch(`${API_URL}/api/orders`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({requestKey:key,expectedTotal:subtotal,items:cart.map(i=>({slug:i.id,quantity:i.quantity}))})});
+      const result=await response.json();if(!response.ok){if(response.status<500)setOrderKey("");throw Error(response.status===401?"Ingresá a tu cuenta para guardar el pedido.":result.error);}
+      const order=result.order;
+      const text=["Hola, Zénit Salón. Guardé mi pedido en el sitio.",`Pedido: ${order.id}`,...order.items.map((i:{quantity:number;name:string;subtotal:number})=>`${i.quantity} × ${i.name} — ${formatPrice(i.subtotal)}`),`Total: ${formatPrice(order.total)}`,"Quiero coordinar pago y entrega."].join("\n");
+      setCart([]);setOrderKey("");setOrderMessage(`Pedido ${order.id.slice(0,8)} guardado. Consultalo en Mi cuenta.`);
+      window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`,"_blank","noopener,noreferrer");
+    } catch(error){setOrderMessage(error instanceof Error?error.message:"No se pudo guardar. Reintentá: tu solicitud no se duplicará.");}
+    finally{setOrdering(false);}
 
-    const message = [
-      "Hola, Zénit Salón. Quiero realizar este pedido:",
-      "",
-      ...productLines,
-      "",
-      `Subtotal: ${formatPrice(subtotal)}`,
-      "",
-      "Por favor confirmen disponibilidad y forma de entrega o retiro.",
-    ].join("\n");
-
-    window.open(
-      `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`,
-      "_blank",
-      "noopener,noreferrer",
-    );
   };
 
   const toggleCategory = (categoryId: string) => {
@@ -400,6 +280,7 @@ export default function TiendaPage() {
             </button>
           </div>
 
+          {orderMessage && <p role="status" className={styles.checkoutNote}>{orderMessage} <Link href="/mi-cuenta">Mi cuenta</Link> · <Link href="/login">Ingresar</Link></p>}
           {!cart.length ? (
             <div className={styles.emptyCart}>
               <span>✦</span>
@@ -467,9 +348,10 @@ export default function TiendaPage() {
               <button
                 type="button"
                 className={styles.whatsappCheckout}
-                onClick={sendOrderToWhatsApp}
+                onClick={()=>void sendOrderToWhatsApp()}
+                disabled={ordering}
               >
-                Enviar pedido por WhatsApp
+                {ordering ? "Guardando pedido…" : "Guardar y coordinar por WhatsApp"}
                 <span aria-hidden="true">→</span>
               </button>
 
@@ -503,6 +385,8 @@ export default function TiendaPage() {
             </p>
           </div>
 
+          {catalogError && <p role="alert">{catalogError}</p>}
+          {!catalogError && !catalogCategories.length && <p>No hay productos disponibles en este momento.</p>}
           <div className={styles.catalog}>
             {catalogCategories.map((category) => {
               const isCategoryOpen = Boolean(openCategories[category.id]);

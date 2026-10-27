@@ -5,15 +5,11 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import Link from "next/link";
+import MyActivity from "../src/components/MyActivity";
 import { usePathname, useRouter } from "next/navigation";
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/$/, "");
-const TOKEN_KEY = "zenit_token";
-
-function authHeaders(): Record<string, string> {
-  const token = typeof window === "undefined" ? "" : localStorage.getItem(TOKEN_KEY);
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
+const API_URL = "/api/backend";
+function authHeaders(): Record<string, string> { return {}; }
 
 const services = [
   { icon: "✦", title: "Corte y estilismo", text: "Diseño personalizado para realzar tu imagen.", specialties: ["Corte femenino", "Corte masculino", "Peinado y acabado"] },
@@ -102,22 +98,10 @@ export default function Home() {
 
   useEffect(() => {
     const loadSession = async () => {
-      const token =
-        typeof window === "undefined"
-          ? null
-          : localStorage.getItem(TOKEN_KEY);
-
-      if (!token) {
-        setSessionLoading(false);
-        return;
-      }
-
       try {
         const response = await fetch(`${API_URL}/api/auth/me`, {
           cache: "no-store",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+
         });
 
         if (response.ok) {
@@ -130,12 +114,14 @@ export default function Home() {
             setReferralExpiry(data.referral.expiry);
           }
         } else if (response.status === 401) {
-          localStorage.removeItem(TOKEN_KEY);
+
           setProfile(null);
           setMovements([]);
           setReferralCode("");
           setReferralExpiry("");
         }
+      } catch {
+        setAuthError("No se pudo cargar tu sesión. Reintentá en unos segundos.");
       } finally {
         setSessionLoading(false);
       }
@@ -198,6 +184,7 @@ export default function Home() {
     setAuthLoading(true);
     setAuthError("");
     const data = new FormData(event.currentTarget);
+    if(data.get("password") !== data.get("passwordConfirmation")){setAuthError("Las contraseñas no coinciden.");setAuthLoading(false);return;}
     try {
       const response = await fetch(`${API_URL}/api/auth/register`, {
         method: "POST",
@@ -212,7 +199,7 @@ export default function Home() {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "No pudimos crear la cuenta.");
-      localStorage.setItem(TOKEN_KEY, result.token);
+
       setProfile(result.customer);
       setAuthMessage("Tu cuenta está activa. El correo de bienvenida está en proceso.");
       router.replace("/mi-cuenta");
@@ -259,7 +246,7 @@ export default function Home() {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "No pudimos iniciar sesión.");
-      localStorage.setItem(TOKEN_KEY, result.token);
+
       setProfile(result.customer);
       setAuthMessage("Sesión iniciada correctamente.");
     } catch (error) {
@@ -270,7 +257,7 @@ export default function Home() {
   };
 
   const logoutCustomer = async () => {
-    localStorage.removeItem(TOKEN_KEY);
+    await fetch(`${API_URL}/api/auth/logout`, {method:"POST"});
     setProfile(null);
     setMovements([]);
     setReferralCode("");
@@ -278,6 +265,7 @@ export default function Home() {
     setAuthMessage("");
   };
 
+  useEffect(() => { localStorage.removeItem('zenit_token'); localStorage.removeItem('zenit_staff_token'); sessionStorage.removeItem('zenit_admin_key'); }, []);
   const totalPoints = useMemo(
     () => (profile?.purchasePoints || 0) + (profile?.referralPoints || 0),
     [profile],
@@ -285,6 +273,7 @@ export default function Home() {
 
   return (
     <main>
+      {isAccount && profile && <MyActivity />}
       <header className="site-header">
         <Link className="brand" href="/" aria-label="Zénit Salón, inicio">
           <img src="/logo-zenit.png" alt="Zénit Salón" />
@@ -383,6 +372,8 @@ export default function Home() {
                         type={showRegisterPassword ? "text" : "password"}
                         required
                         minLength={8}
+                        maxLength={72}
+                        autoComplete="new-password"
                         placeholder="Mínimo 8 caracteres"
                       />
                       <button type="button" className="password-toggle" onClick={() => setShowRegisterPassword((visible) => !visible)} aria-label={showRegisterPassword ? "Ocultar contraseña" : "Mostrar contraseña"} aria-pressed={showRegisterPassword}>
@@ -394,6 +385,7 @@ export default function Home() {
                       </button>
                     </div>
                   </label>
+                  <label>Confirmá tu contraseña<input name="passwordConfirmation" type="password" required minLength={8} maxLength={72} autoComplete="new-password"/></label>
                   <label>Código de referido <small>Opcional</small><input name="referral" placeholder="Ej. ZENIT-A7K29Q" /></label>
                   <label className="terms-check"><input type="checkbox" required /><span>Acepto los términos del programa de fidelización.</span></label>
                   {authError && <p className="inline-error">{authError}</p>}

@@ -1,0 +1,46 @@
+ZENIT SALON — FRONTEND — 26 OCTUBRE 2026
+BASE: 2a06b497f448a388c3c1a55c9e3e49521ddeb561
+
+Este ZIP contiene archivos completos modificados y nuevos con rutas relativas a
+la raíz de zenit-salon-demo. Extraé en ese repositorio; no en el backend.
+Se conservan imágenes, logo, tipografías y estilos existentes. Incluye estilos
+adicionales para la agenda y sus controles; no reemplaza los archivos de imágenes.
+
+1. Compará tu HEAD y guardá tus cambios locales antes de extraer.
+2. Aplicá la migración y prepará el acceso de la dueña con el ZIP backend.
+3. En Vercel configurá ZENIT_API_URL con la URL HTTPS del backend actual, sin /api.
+   La URL no se adivina: copiá la misma base real que ya usa NEXT_PUBLIC_API_URL.
+   La variable antigua sirve como respaldo; se recomienda ZENIT_API_URL.
+4. Desde la raíz del frontend:
+   npm ci
+   npm run lint
+   npx tsc --noEmit
+   npm run build
+5. Revisá el diff y subí los cambios con los comandos habituales.
+   git status
+   git diff --check
+   git add .
+   git commit -m "Agrega agenda privada y acceso personal para Zenit Salon"
+   git push origin main
+6. Comprobá ZENIT_API_URL también en Production; cambiarla exige un redeploy.
+
+COMPORTAMIENTO
+- /admin: correo y contraseña propios; la clave compartida anterior deja de usarse.
+- Mi agenda: confirmar citas, moverlas, bloquear tiempo, agregar citas externas.
+- Abrir horarios: semana laboral, varios turnos y excepciones por fecha.
+- /reservar: disponibilidad de servicios con duración configurada; requiere
+  cliente registrado y no muestra datos ajenos. Hora de Costa Rica.
+- Los servicios cotizados se coordinan previamente con el salón; la dueña define
+  su duración y los agenda. La solicitud de WhatsApp no confirma un cupo.
+- /mi-cuenta: citas y pedidos propios, cancelación y cambio de contraseña.
+- /tienda: guarda pedido y aparta stock antes de abrir WhatsApp para coordinar.
+  Si el navegador bloquea la ventana, el pedido sigue en Mi cuenta.
+- El carrito público se conserva al ir a iniciar sesión. Precios y disponibilidad
+  se revisan contra el catálogo al cargar y otra vez en servidor al confirmar.
+- Sesiones HttpOnly, SameSite, Secure en producción; sin tokens en localStorage.
+- El frontend debe ejecutarse con Next en Vercel/Node; la API intermediaria nueva
+  NO funciona como exportación HTML estática.
+- El POS y cuentas por cobrar siguen pendientes del trabajo en System Lab.
+
+Antes de activar las reservas, la dueña debe guardar horarios y duraciones.
+Sin esa configuración no se ofrecen cupos ficticios.

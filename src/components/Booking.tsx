@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-const whatsappNumber = "50662964881";
+const whatsappNumber = "50671246337";
 
 const services = [
   "Corte y estilismo",

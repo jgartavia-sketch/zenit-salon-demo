@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import AvailabilityPicker from "../../src/components/AvailabilityPicker";
 import styles from "./reservar.module.css";
 
 type ServiceMode = "quote" | "reserve";
@@ -32,73 +33,8 @@ type QuotedService = CatalogService & {
   mode: "quote";
 };
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/$/, "");
+const API_URL = "/api/backend";
 const WHATSAPP_NUMBER = "50671246337";
-
-const fallbackCategories: ServiceCategory[] = [
-  {
-    id: "cortes",
-    name: "Cortes",
-    eyebrow: "Precio fijo",
-    description: "Cortes con precio fijo.",
-    services: [
-      { id: "corte-recto", name: "Corte recto", price: 5000, category: "Cortes", mode: "reserve" },
-      { id: "corte-v", name: "Corte en V", price: 5000, category: "Cortes", mode: "reserve" },
-      { id: "corte-mariposa", name: "Corte mariposa", price: 5000, category: "Cortes", mode: "reserve" },
-      { id: "corte-capas", name: "Corte en capas", price: 5000, category: "Cortes", mode: "reserve" },
-      { id: "corte-pixie", name: "Corte pixie", price: 5000, category: "Cortes", mode: "reserve" },
-      { id: "corte-bob-chanel", name: "Corte bob o chanel", price: 5000, category: "Cortes", mode: "reserve" },
-      { id: "corte-clasico-hombre", name: "Corte clásico de hombre", price: 5000, category: "Cortes", mode: "reserve" },
-    ],
-  },
-  {
-    id: "tratamientos-capilares",
-    name: "Tratamientos capilares",
-    eyebrow: "Cotización personalizada",
-    description: "Servicios cotizados previamente.",
-    services: [
-      { id: "velo-brillo", name: "Velo de brillo", category: "Tratamientos capilares", mode: "quote" },
-      { id: "aminoacidos", name: "Aminoácidos", category: "Tratamientos capilares", mode: "quote" },
-      { id: "tratamiento-danos", name: "Tratamiento de daños", category: "Tratamientos capilares", mode: "quote" },
-      { id: "botox-alisante", name: "Botox alisante", category: "Tratamientos capilares", mode: "quote" },
-      { id: "botox-humectante", name: "Botox humectante", category: "Tratamientos capilares", mode: "quote" },
-      { id: "celulas-madres", name: "Células madres", category: "Tratamientos capilares", mode: "quote" },
-      { id: "keratina", name: "Keratina", category: "Tratamientos capilares", mode: "quote" },
-      { id: "nanoplastia", name: "Nanoplastia", category: "Tratamientos capilares", mode: "quote" },
-      { id: "liso-extremo", name: "Liso extremo", category: "Tratamientos capilares", mode: "quote" },
-    ],
-  },
-  {
-    id: "tintes",
-    name: "Tintes",
-    eyebrow: "Cotización personalizada",
-    description: "Servicios cotizados previamente.",
-    services: [
-      { id: "tinte-fantasia", name: "Tinte fantasía", category: "Tintes", mode: "quote" },
-      { id: "tinte-global", name: "Tinte global", category: "Tintes", mode: "quote" },
-      { id: "cubrimiento-canas", name: "Cubrimiento de canas", category: "Tintes", mode: "quote" },
-      { id: "mechas-rayitos", name: "Diseño de mechas y rayitos", category: "Tintes", mode: "quote" },
-      { id: "balayage", name: "Balayage", category: "Tintes", mode: "quote" },
-      { id: "morena-iluminada", name: "Morena iluminada", category: "Tintes", mode: "quote" },
-    ],
-  },
-  {
-    id: "lavado-secado-planchado",
-    name: "Lavado, secado y planchado",
-    eyebrow: "Servicio completo",
-    description: "Servicio completo con tratamiento básico.",
-    services: [
-      {
-        id: "lavado-secado-planchado-tratamiento",
-        name: "Lavado + secado + planchado + tratamiento básico",
-        price: 10000,
-        category: "Lavado, secado y planchado",
-        mode: "reserve",
-        note: "Tratamiento básico incluido.",
-      },
-    ],
-  },
-];
 
 function formatPrice(value: number) {
   return `₡${value.toLocaleString("es-CR")}`;
@@ -114,11 +50,14 @@ function todayISO() {
 export default function ReservarPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [catalogCategories, setCatalogCategories] =
-    useState<ServiceCategory[]>(fallbackCategories);
+    useState<ServiceCategory[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [alreadyQuoted, setAlreadyQuoted] = useState(false);
   const [selectedQuotedIds, setSelectedQuotedIds] = useState<string[]>([]);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [bookingError, setBookingError] = useState("");
+  const [requestKey, setRequestKey] = useState("");
 
   useEffect(() => {
     const loadServices = async () => {
@@ -127,14 +66,14 @@ export default function ReservarPage() {
           cache: "no-store",
         });
 
-        if (!response.ok) return;
+        if (!response.ok) throw Error("No se pudieron cargar los servicios.");
 
         const data = await response.json();
-        if (Array.isArray(data.categories) && data.categories.length > 0) {
+        if (Array.isArray(data.categories)) {
           setCatalogCategories(data.categories);
         }
       } catch {
-        // El respaldo local evita romper Reservar si el API está temporalmente fuera.
+        setBookingError("No se pudieron cargar los servicios vigentes. Actualizá la página o contactá al salón.");
       }
     };
 
@@ -173,7 +112,8 @@ export default function ReservarPage() {
       .split(",")
       .filter((id) => reservableServices.some((service) => service.id === id));
 
-    setSelectedIds([...new Set(validIds)]);
+    const timer = setTimeout(() => setSelectedIds([...new Set(validIds)]), 0);
+    return () => clearTimeout(timer);
   }, [reservableServices]);
 
   const selectedServices = useMemo(
@@ -238,7 +178,7 @@ export default function ReservarPage() {
     }
   };
 
-  const submitReservation = (event: FormEvent<HTMLFormElement>) => {
+  const submitReservation = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!hasAnyService) return;
@@ -287,13 +227,22 @@ export default function ReservarPage() {
       .filter(Boolean)
       .join("\n");
 
-    setSubmitted(true);
+    setBookingError(""); setSubmitting(true); setSubmitted(false);
+    try {
+      if (selectedQuotedServices.length) {
+        const response = await fetch(`${API_URL}/api/service-requests`, {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,phone,service:[...selectedServices,...selectedQuotedServices].map(s=>s.name).join(" + ").slice(0,120),details:notes || "Solicitud de cita con servicios cotizados previamente",preferredDate:date,preferredTime:time})});
+        const result=await response.json();if(!response.ok)throw Error(result.error || "No se pudo guardar la solicitud.");
+        window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`,"_blank","noopener,noreferrer");
+      } else {
+        if(!time)throw Error("Elegí un horario disponible de la agenda.");
+        const key=requestKey || crypto.randomUUID();setRequestKey(key);
+        const response=await fetch(`${API_URL}/api/agenda/appointments`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({date,time,services:selectedIds,notes,requestKey:key})});
+        const result=await response.json();if(!response.ok){if(response.status<500)setRequestKey("");throw Error(result.error || "No se pudo reservar.");}
+      }
+      setSubmitted(true);setRequestKey("");
+    } catch(error){setBookingError(error instanceof Error?error.message:"No se pudo conectar con el salón.");}
+    finally{setSubmitting(false);}
 
-    window.open(
-      `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`,
-      "_blank",
-      "noopener,noreferrer",
-    );
   };
 
   return (
@@ -547,7 +496,7 @@ export default function ReservarPage() {
             </div>
 
             <form className={styles.form} onSubmit={submitReservation}>
-              <label>
+              {selectedQuotedServices.length > 0 ? <><label>
                 Nombre completo
                 <input
                   name="name"
@@ -570,17 +519,8 @@ export default function ReservarPage() {
                 />
               </label>
 
-              <div className={styles.formRow}>
-                <label>
-                  Fecha preferida
-                  <input name="date" type="date" min={todayISO()} required />
-                </label>
-
-                <label>
-                  Hora preferida
-                  <input name="time" type="time" required />
-                </label>
-              </div>
+              </> : <p>Tu cita se vinculará al nombre y WhatsApp de tu cuenta registrada.</p>}
+              {selectedQuotedServices.length ? <><p>Estos servicios requieren coordinación con el salón. La solicitud no aparta un cupo hasta que la dueña acuerde su duración.</p><label>Fecha preferida<input name="date" type="date" min={todayISO()}/></label><label>Hora preferida<input name="time" type="time"/></label></> : <AvailabilityPicker services={selectedIds}/>}
 
               <label>
                 Notas para Zénit
@@ -635,23 +575,22 @@ export default function ReservarPage() {
 
               {submitted && (
                 <p className={styles.successMessage}>
-                  Abrimos WhatsApp con tu solicitud. Enviá el mensaje para que
-                  Zénit pueda confirmar disponibilidad.
+                  {selectedQuotedServices.length ? "Solicitud guardada. Coordiná la duración y el horario con el salón por WhatsApp." : <>Tu espacio quedó apartado mientras el salón confirma. Revisá el estado en <Link href="/mi-cuenta">Mis citas</Link>.</>}
                 </p>
               )}
 
+              {bookingError && <p role="alert" className={styles.formNote}>{bookingError}</p>}
               <button
                 className={styles.submitButton}
                 type="submit"
-                disabled={!hasAnyService}
+                disabled={!hasAnyService || submitting || submitted}
               >
-                Enviar solicitud por WhatsApp
+                {submitting ? "Guardando…" : submitted ? "Solicitud guardada" : selectedQuotedServices.length ? "Coordinar con el salón" : "Solicitar mi cita"}
                 <span aria-hidden="true">→</span>
               </button>
 
               <p className={styles.formNote}>
-                La cotización previa no se modifica aquí. Zénit únicamente
-                confirmará disponibilidad, fecha y hora por WhatsApp.
+                Las citas requieren confirmación del salón. Los cupos se validan nuevamente al guardar.
               </p>
             </form>
           </section>

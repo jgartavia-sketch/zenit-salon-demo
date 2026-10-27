@@ -5,8 +5,8 @@ import type { FormEvent } from "react";
 import Link from "next/link";
 import styles from "./staff.module.css";
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/$/, "");
-const STAFF_TOKEN_KEY = "zenit_staff_token";
+const API_URL = "/api/backend";
+
 
 type Staff = {
   id: string;
@@ -26,10 +26,10 @@ type Customer = {
 };
 
 function staffHeaders(json = false): Record<string, string> {
-  const token = typeof window === "undefined" ? "" : localStorage.getItem(STAFF_TOKEN_KEY);
+
   return {
     ...(json ? { "Content-Type": "application/json" } : {}),
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+
   };
 }
 
@@ -59,12 +59,6 @@ export default function StaffPage() {
 
   useEffect(() => {
     const restoreSession = async () => {
-      const token = localStorage.getItem(STAFF_TOKEN_KEY);
-      if (!token) {
-        setSessionLoading(false);
-        return;
-      }
-
       try {
         const response = await fetch(`${API_URL}/api/staff/me`, {
           cache: "no-store",
@@ -74,7 +68,7 @@ export default function StaffPage() {
         if (!response.ok) throw new Error(result.error || "La sesión no es válida.");
         setStaff(result.staff);
       } catch {
-        localStorage.removeItem(STAFF_TOKEN_KEY);
+        setStaff(null);
       } finally {
         setSessionLoading(false);
       }
@@ -102,9 +96,9 @@ export default function StaffPage() {
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "No se pudo iniciar sesión.");
 
-      localStorage.setItem(STAFF_TOKEN_KEY, result.token);
+
       setStaff(result.staff);
-      event.currentTarget.reset();
+      document.querySelector<HTMLFormElement>("form")?.reset();
     } catch (loginError) {
       setError(loginError instanceof Error ? loginError.message : "No se pudo iniciar sesión.");
     } finally {
@@ -175,8 +169,8 @@ export default function StaffPage() {
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem(STAFF_TOKEN_KEY);
+  const logout = async () => {
+    await fetch(`${API_URL}/api/staff/logout`,{method:"POST"});
     setStaff(null);
     setCustomer(null);
     setError("");
@@ -277,7 +271,7 @@ export default function StaffPage() {
                   <span>{amount ? colones(Number(amount)) : "₡0"}</span>
                   <strong>+{pointsPreview} puntos</strong>
                 </div>
-                <label>Número de factura <small>(opcional)</small><input name="invoiceNumber" maxLength={100} placeholder="Ej. FAC-1048" /></label>
+                <label>Número de factura<input name="invoiceNumber" required maxLength={100} placeholder="Ej. FAC-1048" /></label>
                 <label>Descripción<input name="description" defaultValue="Compra o servicio confirmado" minLength={3} maxLength={200} required /></label>
                 <button disabled={awardLoading || pointsPreview <= 0}>
                   {awardLoading ? "Guardando…" : `Confirmar +${pointsPreview} puntos`}
