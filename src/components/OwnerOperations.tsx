@@ -1,6 +1,7 @@
 "use client";
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState, useRef } from "react";
 import styles from "./agenda.module.css";
+import SalonCalendar, { salonDateLabel } from "./SalonCalendar";
 import { localTime, statusLabel } from "./MyActivity";
 type Range = { start: string; end: string };
 type Week = { day: number; ranges: Range[] };
@@ -22,6 +23,7 @@ type Appointment = {
   services: { name: string }[];
 };
 type Service = {
+  slug: string;
   id: string;
   name: string;
   durationMinutes: number | null;
@@ -63,6 +65,7 @@ async function api(path: string, method = "GET", body?: unknown) {
 export default function OwnerOperations() {
   const [tab, setTab] = useState("agenda");
   const [date, setDate] = useState(today);
+  const loadSequence = useRef(0);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [services, setServices] = useState<Service[]>([]);
@@ -70,13 +73,16 @@ export default function OwnerOperations() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [calendarRevision, setCalendarRevision] = useState(0);
   const load = useCallback(async () => {
+    const sequence = ++loadSequence.current;
     const [a, s, v, o] = await Promise.all([
       api(`agenda/appointments?date=${date}`),
       api("agenda/settings"),
       api("agenda/services"),
       api("orders"),
     ]);
+    if (sequence !== loadSequence.current) return;
     setAppointments(a.appointments);
     setSettings((current) => current || s.settings);
     setServices(v.services);
@@ -92,15 +98,10 @@ export default function OwnerOperations() {
   // Refresh only live lists; never overwrite unsaved schedule settings.
   useEffect(() => {
     const timer = setInterval(() => {
-      void Promise.all([api(`agenda/appointments?date=${date}`), api("orders")])
-        .then(([a, o]) => {
-          setAppointments(a.appointments);
-          setOrders(o.orders);
-        })
-        .catch(() => {});
+      void load().catch(() => {});
     }, 60000);
     return () => clearInterval(timer);
-  }, [date]);
+  }, [load]);
   async function run(
     action: () => Promise<unknown>,
     success = "Cambios guardados.",
@@ -111,6 +112,7 @@ export default function OwnerOperations() {
     try {
       await action();
       await load();
+      setCalendarRevision((x) => x + 1);
       setMessage(success);
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo completar.");
@@ -140,6 +142,9 @@ export default function OwnerOperations() {
           customerName: f.get("name"),
           phone: f.get("phone"),
           notes: f.get("notes"),
+          ...(f.get("serviceSlug") && f.get("blocked") !== "on"
+            ? { serviceSlug: f.get("serviceSlug") }
+            : {}),
           ...(f.get("customerEmail")
             ? { customerEmail: f.get("customerEmail") }
             : {}),
@@ -190,206 +195,269 @@ export default function OwnerOperations() {
       )}
       {tab === "agenda" && (
         <>
-          <div className={styles.row}>
-            <label>
-              Ver día
-              <input
-                type="date"
+          <div className={styles.agendaShell}>
+            <div className={styles.calendarSide}>
+              <SalonCalendar
                 value={date}
-                onChange={(e) => setDate(e.target.value)}
+                onChange={setDate}
+                owner
+                revision={calendarRevision}
               />
-            </label>
-            <button
-              disabled={busy}
-              onClick={() => void run(load, "Agenda actualizada.")}
-            >
-              Actualizar
-            </button>
-          </div>
-          <details>
-            <summary>＋ Agregar cita o bloquear horario</summary>
-            <form onSubmit={manual}>
-              <div className={styles.row}>
-                <label>
-                  Fecha
-                  <input
-                    name="date"
-                    type="date"
-                    defaultValue={date}
-                    min={today()}
-                    required
-                  />
-                </label>
-                <label>
-                  Inicio
-                  <input name="time" type="time" required />
-                </label>
-                <label>
-                  Duración en minutos
-                  <input
-                    name="duration"
-                    type="number"
-                    min={15}
-                    max={720}
-                    step={15}
-                    defaultValue={60}
-                    required
-                  />
-                </label>
+            </div>
+            <div className={styles.daySide}>
+              <div className={styles.dayHeading}>
+                <small>EL DÍA EN DETALLE</small>
+                <h3>{salonDateLabel(date)}</h3>
+                <p>Citas, servicios y espacios de tu salón.</p>
               </div>
               <div className={styles.row}>
-                <label>
-                  Cliente o motivo del bloqueo
-                  <input name="name" required minLength={2} maxLength={100} />
-                </label>
-                <label>
-                  WhatsApp
-                  <input name="phone" type="tel" maxLength={30} />
-                </label>
-              </div>
-              <label>
-                Correo del cliente registrado (opcional)
-                <input
-                  name="customerEmail"
-                  type="email"
-                  placeholder="Vincula la cita a su cuenta"
-                />
-              </label>
-              <label>
-                Detalle del servicio o notas
-                <textarea name="notes" maxLength={1000} />
-              </label>
-              <label>
-                <span>
-                  <input name="blocked" type="checkbox" /> Es un bloqueo o
-                  descanso
-                </span>
-              </label>
-              <button disabled={busy}>Guardar cupo</button>
-            </form>
-          </details>
-          {!appointments.length && <p>No hay citas para este día.</p>}
-          {appointments.map((a) => (
-            <article key={a.id} className={styles.card}>
-              <strong>
-                {localTime(a.startAt)} —{" "}
-                {new Date(a.endAt).toLocaleTimeString("es-CR", {
-                  timeZone: "America/Costa_Rica",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </strong>
-              <p>
-                {a.customerName} · {statusLabel[a.status]}
-              </p>
-              <p>
-                {a.services.map((s) => s.name).join(" + ")} {a.notes}
-              </p>
-              {a.phone && (
-                <a
-                  href={`https://wa.me/${a.phone.replace(/\D/g, "").length === 8 ? "506" : ""}${a.phone.replace(/\D/g, "")}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                {(
+                  settings?.overrides.find((x) => x.date === date)?.ranges ||
+                  settings?.weekly.find(
+                    (x) => x.day === new Date(`${date}T12:00:00Z`).getUTCDay(),
+                  )?.ranges ||
+                  []
+                ).map((r, i) => (
+                  <span className={styles.hoursPill} key={i}>
+                    {r.start} — {r.end}
+                  </span>
+                ))}
+                <button
+                  disabled={busy}
+                  onClick={() => void run(load, "Agenda actualizada.")}
                 >
-                  Contactar por WhatsApp
-                </a>
-              )}
-              <div className={styles.row}>
-                {a.status === "PENDING" && (
-                  <button
-                    disabled={busy}
-                    onClick={() =>
-                      void run(
-                        () =>
-                          api(`agenda/appointments/${a.id}`, "PATCH", {
-                            status: "CONFIRMED",
-                          }),
-                        "Cita confirmada.",
-                      )
-                    }
-                  >
-                    Confirmar
-                  </button>
-                )}
-                {a.status === "CONFIRMED" && (
-                  <button
-                    disabled={busy}
-                    onClick={() =>
-                      void run(() =>
-                        api(`agenda/appointments/${a.id}`, "PATCH", {
-                          status: "COMPLETED",
-                        }),
-                      )
-                    }
-                  >
-                    Marcar completada
-                  </button>
-                )}
-                {["PENDING", "CONFIRMED", "BLOCKED"].includes(a.status) && (
-                  <button
-                    className={styles.danger}
-                    disabled={busy}
-                    onClick={() => {
-                      if (confirm("¿Cancelar y liberar este cupo?"))
-                        void run(() =>
-                          api(`agenda/appointments/${a.id}`, "PATCH", {
-                            status: "CANCELLED",
-                          }),
-                        );
-                    }}
-                  >
-                    Cancelar / liberar
-                  </button>
-                )}
+                  ↻ Actualizar
+                </button>
               </div>
-              {["PENDING", "CONFIRMED"].includes(a.status) && (
-                <details>
-                  <summary>Reprogramar cita</summary>
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      const f = new FormData(e.currentTarget);
-                      void run(() =>
-                        api(`agenda/appointments/${a.id}`, "PATCH", {
-                          date: f.get("date"),
-                          time: f.get("time"),
-                          durationMinutes: Number(f.get("duration")),
-                        }),
-                      );
-                    }}
-                  >
-                    <div className={styles.row}>
+              <details>
+                <summary>＋ Agregar cita o bloquear horario</summary>
+                <form onSubmit={manual} key={date}>
+                  <div className={styles.row}>
+                    <label>
+                      Fecha
                       <input
                         name="date"
-                        aria-label="Nueva fecha"
                         type="date"
+                        defaultValue={date}
                         min={today()}
                         required
                       />
-                      <input
-                        name="time"
-                        aria-label="Nueva hora"
-                        type="time"
-                        required
-                      />
+                    </label>
+                    <label>
+                      Inicio
+                      <input name="time" type="time" required />
+                    </label>
+                    <label>
+                      Duración en minutos
                       <input
                         name="duration"
-                        aria-label="Duración"
                         type="number"
                         min={15}
                         max={720}
-                        defaultValue={
-                          (+new Date(a.endAt) - +new Date(a.startAt)) / 60000
-                        }
+                        step={15}
+                        defaultValue={60}
                         required
                       />
-                      <button disabled={busy}>Mover cita</button>
-                    </div>
-                  </form>
-                </details>
+                    </label>
+                  </div>
+                  <div className={styles.row}>
+                    <label>
+                      Cliente o motivo del bloqueo
+                      <input
+                        name="name"
+                        required
+                        minLength={2}
+                        maxLength={100}
+                      />
+                    </label>
+                    <label>
+                      WhatsApp
+                      <input name="phone" type="tel" maxLength={30} />
+                    </label>
+                  </div>
+                  <label>
+                    Correo del cliente registrado (opcional)
+                    <input
+                      name="customerEmail"
+                      type="email"
+                      placeholder="Vincula la cita a su cuenta"
+                    />
+                  </label>
+                  <label>
+                    Servicio
+                    <select
+                      name="serviceSlug"
+                      defaultValue=""
+                      onChange={(e) => {
+                        const selected = services.find(
+                          (s) => s.slug === e.target.value,
+                        );
+                        const duration =
+                          e.currentTarget.form?.elements.namedItem(
+                            "duration",
+                          ) as HTMLInputElement | null;
+                        if (selected?.durationMinutes && duration)
+                          duration.value = String(selected.durationMinutes);
+                      }}
+                    >
+                      <option value="">Servicio personalizado / bloqueo</option>
+                      {services.map((service) => (
+                        <option key={service.id} value={service.slug}>
+                          {service.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Detalle del servicio o notas
+                    <textarea name="notes" maxLength={1000} />
+                  </label>
+                  <label>
+                    <span>
+                      <input name="blocked" type="checkbox" /> Es un bloqueo o
+                      descanso
+                    </span>
+                  </label>
+                  <button disabled={busy}>Guardar cupo</button>
+                </form>
+              </details>
+              {!appointments.length && (
+                <div className={styles.emptyDay}>
+                  <span aria-hidden="true">✧</span>
+                  <h3>Un día por diseñar.</h3>
+                  <p>
+                    No hay citas registradas. Agregá una cita o habilitá tus
+                    horarios.
+                  </p>
+                </div>
               )}
-            </article>
-          ))}
+              {appointments.map((a) => (
+                <article
+                  key={a.id}
+                  className={`${styles.card} ${styles.appointmentCard} ${a.status === "PENDING" ? styles.pendingCard : ""}`}
+                >
+                  <strong>
+                    {localTime(a.startAt)} —{" "}
+                    {new Date(a.endAt).toLocaleTimeString("es-CR", {
+                      timeZone: "America/Costa_Rica",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </strong>
+                  <p>
+                    {a.customerName} · {statusLabel[a.status]}
+                  </p>
+                  <p>
+                    {a.services.map((s) => s.name).join(" + ")} {a.notes}
+                  </p>
+                  {a.phone && (
+                    <a
+                      href={`https://wa.me/${a.phone.replace(/\D/g, "").length === 8 ? "506" : ""}${a.phone.replace(/\D/g, "")}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Contactar por WhatsApp
+                    </a>
+                  )}
+                  <div className={styles.row}>
+                    {a.status === "PENDING" && (
+                      <button
+                        disabled={busy}
+                        onClick={() =>
+                          void run(
+                            () =>
+                              api(`agenda/appointments/${a.id}`, "PATCH", {
+                                status: "CONFIRMED",
+                              }),
+                            "Cita confirmada.",
+                          )
+                        }
+                      >
+                        Confirmar
+                      </button>
+                    )}
+                    {a.status === "CONFIRMED" && (
+                      <button
+                        disabled={busy}
+                        onClick={() =>
+                          void run(() =>
+                            api(`agenda/appointments/${a.id}`, "PATCH", {
+                              status: "COMPLETED",
+                            }),
+                          )
+                        }
+                      >
+                        Marcar completada
+                      </button>
+                    )}
+                    {["PENDING", "CONFIRMED", "BLOCKED"].includes(a.status) && (
+                      <button
+                        className={styles.danger}
+                        disabled={busy}
+                        onClick={() => {
+                          if (confirm("¿Cancelar y liberar este cupo?"))
+                            void run(() =>
+                              api(`agenda/appointments/${a.id}`, "PATCH", {
+                                status: "CANCELLED",
+                              }),
+                            );
+                        }}
+                      >
+                        Cancelar / liberar
+                      </button>
+                    )}
+                  </div>
+                  {["PENDING", "CONFIRMED"].includes(a.status) && (
+                    <details>
+                      <summary>Reprogramar cita</summary>
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          const f = new FormData(e.currentTarget);
+                          void run(() =>
+                            api(`agenda/appointments/${a.id}`, "PATCH", {
+                              date: f.get("date"),
+                              time: f.get("time"),
+                              durationMinutes: Number(f.get("duration")),
+                            }),
+                          );
+                        }}
+                      >
+                        <div className={styles.row}>
+                          <input
+                            name="date"
+                            aria-label="Nueva fecha"
+                            type="date"
+                            min={today()}
+                            required
+                          />
+                          <input
+                            name="time"
+                            aria-label="Nueva hora"
+                            type="time"
+                            required
+                          />
+                          <input
+                            name="duration"
+                            aria-label="Duración"
+                            type="number"
+                            min={15}
+                            max={720}
+                            defaultValue={
+                              (+new Date(a.endAt) - +new Date(a.startAt)) /
+                              60000
+                            }
+                            required
+                          />
+                          <button disabled={busy}>Mover cita</button>
+                        </div>
+                      </form>
+                    </details>
+                  )}
+                </article>
+              ))}
+            </div>
+          </div>
         </>
       )}
       {tab === "schedule" && settings && (

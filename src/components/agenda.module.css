@@ -178,3 +178,116 @@
 .panel h3 {
   -webkit-text-fill-color: #102b46;
 }
+.availability {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.dayHeading {
+  margin-bottom: 18px;
+}
+.dayHeading > small {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #57728b;
+}
+.dayHeading h3 {
+  text-transform: capitalize;
+  font-size: 30px;
+  line-height: 1.1;
+  margin: 8px 0;
+}
+.dayHeading p {
+  color: #647a8e;
+  font-size: 13px;
+}
+.privacy {
+  font-size: 11px !important;
+  line-height: 1.6 !important;
+  color: #647a8e;
+}
+.agendaShell {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: 28px;
+  align-items: start;
+}
+.calendarSide,
+.daySide {
+  min-width: 0;
+}
+.daySide {
+  padding: 20px;
+  border-radius: 20px;
+  background: #ffffff80;
+  border: 1px solid #d5dfe8;
+}
+.hoursPill {
+  padding: 7px 10px;
+  background: #e3ebf3;
+  color: #244b70;
+  border-radius: 20px;
+  font-size: 11px;
+}
+.emptyDay {
+  padding: 30px 10px;
+  text-align: center;
+  color: #6a8196;
+}
+.emptyDay > span {
+  font-size: 34px;
+}
+.panel .emptyDay h3 {
+  font-size: 27px;
+  margin: 12px 0;
+}
+.appointmentCard {
+  margin-top: 14px;
+  border: 1px solid #d3dfe9;
+  border-left: 3px solid #234e76;
+  border-radius: 16px;
+  padding: 16px;
+  background: linear-gradient(145deg, #fff, #edf3f8);
+}
+.pendingCard {
+  border-left-color: #809db5;
+}
+.panel .appointmentCard p {
+  font-size: 13px;
+}
+.panel .appointmentCard > strong {
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+.panel .appointmentCard button {
+  font-size: 12px;
+}
+.panel .daySide summary {
+  font-size: 13px;
+}
+.panel .daySide textarea {
+  min-height: 70px;
+}
+.panel .daySide form > label {
+  margin-top: 10px;
+}
+@media (max-width: 1050px) {
+  .agendaShell {
+    grid-template-columns: 1fr;
+  }
+  .daySide {
+    padding: 18px;
+  }
+}
+@media (max-width: 650px) {
+  .dayHeading h3 {
+    font-size: 27px;
+  }
+  .daySide {
+    padding: 14px;
+  }
+  .availability {
+    gap: 14px;
+  }
+}

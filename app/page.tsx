@@ -83,6 +83,7 @@ export default function Home() {
   const [referralExpiry, setReferralExpiry] = useState("");
   const [copied, setCopied] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [showConfirmationPassword,setShowConfirmationPassword]=useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [selectedService, setSelectedService] = useState("Corte y estilismo");
   const [serviceRequestLoading, setServiceRequestLoading] = useState(false);
@@ -99,6 +100,9 @@ export default function Home() {
   useEffect(() => {
     const loadSession = async () => {
       try {
+        const check=await fetch(`${API_URL}/api/auth/session`,{cache:"no-store"});
+        if(!check.ok)throw Error("No se pudo comprobar la sesión.");
+        const session=await check.json();if(!session.authenticated)return;
         const response = await fetch(`${API_URL}/api/auth/me`, {
           cache: "no-store",
 
@@ -249,6 +253,8 @@ export default function Home() {
 
       setProfile(result.customer);
       setAuthMessage("Sesión iniciada correctamente.");
+      const next=new URLSearchParams(window.location.search).get("returnTo");
+      if(next){const target=new URL(next,window.location.origin);if(target.origin===window.location.origin&&target.pathname==='/reservar')router.replace(target.pathname+target.search);}
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : "No pudimos iniciar sesión.");
     } finally {
@@ -385,7 +391,7 @@ export default function Home() {
                       </button>
                     </div>
                   </label>
-                  <label>Confirmá tu contraseña<input name="passwordConfirmation" type="password" required minLength={8} maxLength={72} autoComplete="new-password"/></label>
+                  <label>Confirmá tu contraseña<div className="password-field"><input name="passwordConfirmation" type={showConfirmationPassword?"text":"password"} required minLength={8} maxLength={72} autoComplete="new-password" placeholder="Repetí tu contraseña"/><button type="button" className="password-toggle" onClick={()=>setShowConfirmationPassword(v=>!v)} aria-label={showConfirmationPassword?"Ocultar confirmación de contraseña":"Mostrar confirmación de contraseña"} aria-pressed={showConfirmationPassword}><svg viewBox="0 0 24 24" aria-hidden="true">{showConfirmationPassword?<><path d="M3 3l18 18M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z"/></>:<><path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z"/><circle cx="12" cy="12" r="2.5"/></>}</svg></button></div></label>
                   <label>Código de referido <small>Opcional</small><input name="referral" placeholder="Ej. ZENIT-A7K29Q" /></label>
                   <label className="terms-check"><input type="checkbox" required /><span>Acepto los términos del programa de fidelización.</span></label>
                   {authError && <p className="inline-error">{authError}</p>}

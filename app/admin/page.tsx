@@ -194,11 +194,33 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      loadAdminData().then((ok) => { if(ok) setAuthenticated(true); });
+    const controller = new AbortController();
+    let active = true;
+    const timer = window.setTimeout(async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/auth/session?owner=1`, {
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        const session = await response.json();
+        if (!response.ok) throw new Error(session.error || "No se pudo comprobar la sesión.");
+        if (!active || !session.authenticated) return;
+        const ok = await loadAdminData();
+        if (active && ok) setAuthenticated(true);
+      } catch (error) {
+        if (active && !controller.signal.aborted) {
+          setLoginError(error instanceof Error ? error.message : "No se pudo comprobar la sesión.");
+        }
+      } finally {
+        if (active) setChecking(false);
+      }
     }, 0);
 
-    return () => window.clearTimeout(timer);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+      controller.abort();
+    };
   }, []);
 
   const login = async (event: FormEvent<HTMLFormElement>) => {

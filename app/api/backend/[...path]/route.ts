@@ -41,6 +41,13 @@ async function proxy(
   const contentType = request.headers.get("content-type");
   if (contentType) headers.set("Content-Type", contentType);
   const token = request.cookies.get(cookieName)?.value;
+  // Absence of a session is an ordinary state, not a failed private catalog request.
+  const sessionCheck = method === "GET" && route === "api/auth/session";
+  if (sessionCheck && !token) {
+    return NextResponse.json({ authenticated: false }, {
+      headers: { "Cache-Control": "no-store" },
+    });
+  }
   if (token) headers.set("Authorization", `Bearer ${token}`);
   const base = process.env.ZENIT_API_URL || process.env.NEXT_PUBLIC_API_URL;
   if (!base)
@@ -61,7 +68,8 @@ async function proxy(
       { status: 503 },
     );
   // Fixed base from server configuration; no upstream URLs or caller Authorization are forwarded.
-  url.pathname = `${url.pathname.replace(/\/$/, "")}/${route}`;
+  const upstreamRoute = sessionCheck ? "api/auth/me" : route;
+  url.pathname = `${url.pathname.replace(/\/$/, "")}/${upstreamRoute}`;
   url.search = request.nextUrl.search;
   url.searchParams.delete("owner");
   const length = Number(request.headers.get("content-length") || 0);
@@ -109,6 +117,14 @@ async function proxy(
       signal: AbortSignal.timeout(25000),
     });
     const data = await upstream.json();
+    if (sessionCheck && (upstream.ok || upstream.status === 401 || upstream.status === 403)) {
+      const authenticated = upstream.ok && (kind !== "admin" || data.customer?.role === "ADMIN");
+      const result = NextResponse.json({ authenticated }, {headers:{"Cache-Control":"no-store"}});
+      if (!authenticated) result.cookies.set(cookieName,"",{
+        httpOnly:true, secure:process.env.NODE_ENV === "production", sameSite:"lax", path:"/", maxAge:0,
+      });
+      return result;
+    }
     const response = NextResponse.json(data, {
       status: upstream.status,
       headers: { "Cache-Control": "no-store" },

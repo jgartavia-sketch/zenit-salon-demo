@@ -395,4 +395,20 @@
   .site-header nav a::after {
     transition: none !important;
   }
+}/* Inicio: grafito y plata; imagen y contenido originales conservados. */
+.hero {
+  color:#f2f5f8;
+  background:linear-gradient(180deg,rgba(4,10,17,.45),rgba(4,10,17,.30) 48%,rgba(4,10,17,.72)),url("/images/hero-zenit.jpg") center center/cover no-repeat;
 }
+.hero::before{background:radial-gradient(ellipse at 50% 40%,rgba(5,16,28,.34),transparent 72%)}
+.hero .hero-glow{opacity:.12;background:radial-gradient(circle,rgba(157,185,211,.24),transparent 66%);filter:blur(30px)}
+.hero .hero-grid{opacity:.025}
+.hero h1{color:#f2f5f8;-webkit-text-fill-color:#f2f5f8;text-shadow:0 3px 22px rgba(0,0,0,.65)}
+.hero h1 em{background:linear-gradient(115deg,#fff,#d4dfe9 40%,#a7bdd0 70%,#f3f7fa);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 3px 10px rgba(0,0,0,.4))}
+.hero .trust-row{color:#e3edf5;text-shadow:0 1px 8px #000}.hero .trust-row b{color:#bed6ea}
+@media(max-width:720px){.hero{background:linear-gradient(180deg,rgba(4,10,17,.55),rgba(4,10,17,.42) 46%,rgba(4,10,17,.82)),url("/images/hero-zenit.jpg") 54% center/cover no-repeat}.hero h1{text-shadow:0 3px 22px #000}}
+
+.password-field .password-toggle { color: #48627a; }
+.password-field .password-toggle:hover,
+.password-field .password-toggle:focus-visible { color: #102e4b; background: #dce6ef; }
+.password-field .password-toggle:focus-visible { outline: 2px solid #537a9d; outline-offset: 2px; }

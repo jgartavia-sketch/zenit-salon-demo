@@ -28,9 +28,6 @@ type ServiceCategory = {
 const API_URL = "/api/backend";
 const WHATSAPP_NUMBER = "50671246337";
 
-const sharedIncluded =
-  "Incluye lavado, secado y planchado al finalizar el servicio.";
-
 function formatPrice(value: number) {
   return `₡${value.toLocaleString("es-CR")}`;
 }
@@ -253,17 +250,9 @@ export default function ServiciosPage() {
 
           <p>
             Podés combinar varios servicios en una misma selección. Los de
-            precio fijo se preparan para reserva; tratamientos y tintes se
+            tarifa definida se preparan para reserva; tratamientos y tintes se
             envían juntos para cotización por WhatsApp.
           </p>
-        </div>
-
-        <div className={styles.includedBanner}>
-          <span aria-hidden="true">✓</span>
-          <div>
-            <strong>Incluido en cortes, tratamientos y tintes</strong>
-            <p>{sharedIncluded}</p>
-          </div>
         </div>
 
         <div className={styles.catalog}>
@@ -289,7 +278,7 @@ export default function ServiciosPage() {
                   <div className={styles.categoryHeading}>
                     <span>✦</span>
                     <div>
-                      <p>{category.eyebrow}</p>
+                      <p>{category.id === "lavado-secado-planchado" ? "Combo Tratamiento Completo" : category.eyebrow.replace(/precio fijo/gi,"Tarifa del servicio")}</p>
                       <h2>{category.name}</h2>
                       <small>{category.description}</small>
                     </div>
@@ -332,7 +321,7 @@ export default function ServiciosPage() {
                             <strong>{service.name}</strong>
                             <small>
                               {service.mode === "reserve"
-                                ? "Precio fijo · Reserva"
+                                ? "Servicio · Reserva"
                                 : "Cotización personalizada"}
                             </small>
                             {service.note && <em>{service.note}</em>}
@@ -414,7 +403,7 @@ export default function ServiciosPage() {
                     {reserveServices.length} servicio{reserveServices.length !== 1 ? "s" : ""}
                   </strong>
                   <p>
-                    Total de servicios con precio fijo:{" "}
+                    Total seleccionado:{" "}
                     <b>{formatPrice(reserveTotal)}</b>
                   </p>
                   <button
@@ -437,18 +426,6 @@ export default function ServiciosPage() {
           )}
         </section>
 
-        <div className={styles.quoteNote}>
-          <span aria-hidden="true">✦</span>
-          <div>
-            <small>Dos caminos, una sola selección</small>
-            <strong>Cotizá lo variable. Reservá lo que ya tiene precio.</strong>
-            <p>
-              Si elegís servicios de ambos tipos, podés cotizar tratamientos y
-              tintes por WhatsApp y luego reservar los servicios de precio fijo
-              sin perder tu selección.
-            </p>
-          </div>
-        </div>
       </section>
 
       <footer>

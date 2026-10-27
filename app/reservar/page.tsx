@@ -40,13 +40,6 @@ function formatPrice(value: number) {
   return `₡${value.toLocaleString("es-CR")}`;
 }
 
-function todayISO() {
-  const today = new Date();
-  const offset = today.getTimezoneOffset();
-  const local = new Date(today.getTime() - offset * 60 * 1000);
-  return local.toISOString().split("T")[0];
-}
-
 export default function ReservarPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [catalogCategories, setCatalogCategories] =
@@ -58,6 +51,7 @@ export default function ReservarPage() {
   const [submitting, setSubmitting] = useState(false);
   const [bookingError, setBookingError] = useState("");
   const [requestKey, setRequestKey] = useState("");
+  const [needsLogin,setNeedsLogin]=useState(false);
 
   useEffect(() => {
     const loadServices = async () => {
@@ -209,9 +203,9 @@ export default function ReservarPage() {
       `Fecha preferida: ${date}`,
       `Hora preferida: ${time}`,
       "",
-      selectedServices.length ? "Servicios con precio fijo:" : "",
+      selectedServices.length ? "Servicios seleccionados:" : "",
       ...fixedLines,
-      selectedServices.length ? `Total precio fijo: ${formatPrice(total)}` : "",
+      selectedServices.length ? `Total seleccionado: ${formatPrice(total)}` : "",
       selectedQuotedServices.length ? "" : "",
       selectedQuotedServices.length ? "Servicios cotizados previamente por WhatsApp:" : "",
       ...quotedLines,
@@ -227,7 +221,7 @@ export default function ReservarPage() {
       .filter(Boolean)
       .join("\n");
 
-    setBookingError(""); setSubmitting(true); setSubmitted(false);
+    setBookingError(""); setNeedsLogin(false); setSubmitting(true); setSubmitted(false);
     try {
       if (selectedQuotedServices.length) {
         const response = await fetch(`${API_URL}/api/service-requests`, {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,phone,service:[...selectedServices,...selectedQuotedServices].map(s=>s.name).join(" + ").slice(0,120),details:notes || "Solicitud de cita con servicios cotizados previamente",preferredDate:date,preferredTime:time})});
@@ -235,9 +229,12 @@ export default function ReservarPage() {
         window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`,"_blank","noopener,noreferrer");
       } else {
         if(!time)throw Error("Elegí un horario disponible de la agenda.");
+        const sessionResponse=await fetch(`${API_URL}/api/auth/session`,{cache:"no-store"});
+        if(!sessionResponse.ok)throw Error("No se pudo comprobar la sesión. Reintentá.");
+        if(!(await sessionResponse.json()).authenticated){setNeedsLogin(true);throw Error("Ingresá o creá tu cuenta para guardar esta cita.");}
         const key=requestKey || crypto.randomUUID();setRequestKey(key);
         const response=await fetch(`${API_URL}/api/agenda/appointments`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({date,time,services:selectedIds,notes,requestKey:key})});
-        const result=await response.json();if(!response.ok){if(response.status<500)setRequestKey("");throw Error(result.error || "No se pudo reservar.");}
+        const result=await response.json();if(!response.ok){if(response.status===401)setNeedsLogin(true);if(response.status<500)setRequestKey("");throw Error(response.status===401?"Ingresá o creá tu cuenta para guardar esta cita.":result.error || "No se pudo reservar.");}
       }
       setSubmitted(true);setRequestKey("");
     } catch(error){setBookingError(error instanceof Error?error.message:"No se pudo conectar con el salón.");}
@@ -309,7 +306,7 @@ export default function ReservarPage() {
           </h1>
 
           <p>
-            Reservá servicios de precio fijo o agendá los tintes y tratamientos
+            Reservá servicios con tarifa definida o agendá los tintes y tratamientos
             que ya cotizaste previamente por WhatsApp.
           </p>
 
@@ -341,7 +338,7 @@ export default function ReservarPage() {
           </div>
 
           <p>
-            Podés combinar varios servicios de precio fijo y también agregar
+            Podés combinar varios servicios con tarifa definida y también agregar
             tintes o tratamientos que ya hayan sido cotizados previamente.
           </p>
         </div>
@@ -363,13 +360,13 @@ export default function ReservarPage() {
                 const groupPrice =
                   uniquePrices.length === 1
                     ? `${formatPrice(uniquePrices[0])}${group.services.length > 1 ? " c/u" : ""}`
-                    : "Precio fijo";
+                    : "Tarifa del servicio";
 
                 return (
                   <div className={styles.serviceGroup} key={group.name}>
                     <div className={styles.groupTitle}>
                       <div>
-                        <small>Precio fijo</small>
+                        <small>{group.name.toLowerCase().includes("lavado") ? "Combo Tratamiento Completo" : "Servicios del salón"}</small>
                         <h4>{group.name}</h4>
                       </div>
                       <span>{groupPrice}</span>
@@ -481,7 +478,7 @@ export default function ReservarPage() {
               </div>
 
               <div>
-                <small>Total con precio fijo</small>
+                <small>Total seleccionado</small>
                 <strong>{formatPrice(total)}</strong>
               </div>
             </div>
@@ -520,7 +517,8 @@ export default function ReservarPage() {
               </label>
 
               </> : <p>Tu cita se vinculará al nombre y WhatsApp de tu cuenta registrada.</p>}
-              {selectedQuotedServices.length ? <><p>Estos servicios requieren coordinación con el salón. La solicitud no aparta un cupo hasta que la dueña acuerde su duración.</p><label>Fecha preferida<input name="date" type="date" min={todayISO()}/></label><label>Hora preferida<input name="time" type="time"/></label></> : <AvailabilityPicker services={selectedIds}/>}
+              {selectedQuotedServices.length>0 && <p>Para los servicios cotizados, el salón acordará la duración antes de confirmar el cupo.</p>}
+              <AvailabilityPicker services={selectedQuotedServices.length ? [] : selectedIds}/>
 
               <label>
                 Notas para Zénit
@@ -539,7 +537,7 @@ export default function ReservarPage() {
                   <>
                     {selectedServices.length > 0 && (
                       <div className={styles.summarySection}>
-                        <strong>Precio fijo</strong>
+                        <strong>Tu selección</strong>
                         <div className={styles.summaryList}>
                           {selectedServices.map((service) => (
                             <div key={service.id}>
@@ -568,7 +566,7 @@ export default function ReservarPage() {
                 )}
 
                 <div className={styles.summaryTotal}>
-                  <span>Total precio fijo</span>
+                  <span>Total seleccionado</span>
                   <strong>{formatPrice(total)}</strong>
                 </div>
               </div>
@@ -580,6 +578,7 @@ export default function ReservarPage() {
               )}
 
               {bookingError && <p role="alert" className={styles.formNote}>{bookingError}</p>}
+              {needsLogin&&<Link className="button" href={`/login?returnTo=${encodeURIComponent(`/reservar?servicios=${selectedIds.join(',')}`)}`}>Ingresar o crear mi cuenta →</Link>}
               <button
                 className={styles.submitButton}
                 type="submit"
