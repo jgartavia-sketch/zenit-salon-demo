@@ -310,3 +310,19 @@
   outline: 3px solid #8ba9c2;
   outline-offset: 3px;
 }
+
+/* Acceso directo al login POS, separado de la contraseña del sitio. */
+.panel .posAccessLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  max-width: 100%;
+  white-space: normal;
+  text-decoration: none;
+  background: #173557;
+  border-color: #173557;
+  color: #fff;
+}
+.panel .posAccessLink:hover { background: #254b73; }

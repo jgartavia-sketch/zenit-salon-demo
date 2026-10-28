@@ -219,11 +219,19 @@ export default function OwnerOperations() {
         >
           Pedidos
         </button>
-        <button
-          className={tab === "account" ? styles.chosen : ""}
-          onClick={() => setTab("account")}
+        <a
+          className={`${styles.link} ${styles.posAccessLink}`}
+          href="https://systemlabcr.com/pos/salon"
+          target="_blank"
+          rel="noopener noreferrer"
         >
-          Mi acceso
+          Mi acceso POS ↗
+        </a>
+        <button
+          className={tab === "security" ? styles.chosen : ""}
+          onClick={() => setTab("security")}
+        >
+          Seguridad del sitio
         </button>
       </nav>
       {mailQueue.pending > 0 && (
@@ -903,12 +911,13 @@ export default function OwnerOperations() {
           ))}
         </>
       )}
-      {tab === "account" && (
+      {tab === "security" && (
         <>
-          <h3>Mi acceso personal</h3>
+          <h3>Contraseña del sitio Zénit</h3>
           <p>
-            El acceso del salón es personal. El POS se activará después de
-            completar su integración en System Lab.
+            Esta opción es únicamente para cambiar tu contraseña de zenitsalon.com.
+            No es necesario usarla para ingresar al POS. Para el POS, abrí «Mi acceso
+            POS» e ingresá con el correo y la contraseña que te entregó System Lab.
           </p>
           <form
             onSubmit={(e) => {
